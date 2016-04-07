@@ -594,6 +594,31 @@ class STask:
         #exit(1)
         return And(*const)
 
+    def getArgEqModel(self,model):
+        modelF = []
+
+        # collect all arg variables
+        for i in range(1,self.nc+1):
+            vs = []
+            modelFi = []
+            vs = vs + self.argvars[self.heads[i]]
+            for j in range(1,self.nl+1):
+                vs = vs + self.argvars[self.bodies[i][j-1]]
+
+            for v1 in vs:
+                for v2 in vs:
+                    if v1 is v2: continue
+                    if is_true(model.eval(v1 == v2)):
+                        modelFi.append(v1 == v2)
+                    else:
+                        modelFi.append(Not(v1 == v2))
+            print i, modelFi
+            print "\n"
+            modelF = modelF + modelFi
+
+        assert(is_true(model.eval(And(*modelF))))
+        return And(*modelF)
+
 
     def synthesize(self, nc, nl, bound):
         # number of clauses
@@ -656,6 +681,7 @@ class STask:
             print bodies[i]
 
         argvars = {}
+        argvarsset = set()
 
         print "Head vars", heads
         print "Body vars", bodies
@@ -681,6 +707,7 @@ class STask:
                 if j == 2:
                     argsConst.append(h == 2)
             argvars[heads[i]] = hvars
+            argvarsset.update(hvars)
 
         for i in range(1, nc + 1):
             for j in range(1, nl + 1):
@@ -697,6 +724,9 @@ class STask:
                         argsConst.append(b == 2)
 
                 argvars[bodies[i][j - 1]] = bvars
+
+                argvarsset.update(bvars)
+
 
         print "\n"
         print "Heads constraints", headsConst
@@ -732,6 +762,11 @@ class STask:
             print "Iteration: ", i
 
             (clauses, model) = self.solveConst(const)
+            print "Clauses: "
+            for c in clauses:
+                print c
+            print "\n"
+
             if clauses == None:
                 print "no solution exists"
                 return False
@@ -749,6 +784,7 @@ class STask:
                 modelF = self.negateModel(model)
 
                 negModel = Not(modelF)
+
                 print negModel
                 const = And(const, negModel)
 
