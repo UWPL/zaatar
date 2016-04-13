@@ -1,6 +1,6 @@
 from z3 import *
 from itertools import *
-#from z3extra import *
+from timeit import default_timer as timer
 
 
 class Relation:
@@ -114,6 +114,7 @@ class STask:
         self.pfacts = pf
         self.nfacts = nf
         self.domain = domain
+        self.time = 0
 
         # check all facts belong to declared relations
         for f in (nf + pf):
@@ -235,7 +236,11 @@ class STask:
     def solveConst(self, phi):
         s = Solver()
         s.add(phi)
+        start = timer()
         res = s.check()
+        end = timer()
+        self.time = self.time + (end - start)
+
         print res
 
         if res == unsat:
@@ -243,7 +248,7 @@ class STask:
             return (None, None)
         else:
             m = s.model()
-            print "MODEL:",m
+            print "MODEL:", m
             cs = []
             print self.nc
             for i in range(1, self.nc + 1):
@@ -264,12 +269,85 @@ class STask:
     def getSymmetry(self):
         const = []
 
-        for i in range(1, self.nc+1):
+        for i in range(1, self.nc + 1):
             bs = self.bodies[i]
-            for j in range(0,len(bs)-1):
-                const.append(bs[j] <= bs[j+1])
+            for j in range(0, len(bs) - 1):
+                const.append(bs[j] <= bs[j + 1])
 
         return And(*const)
+
+    """ asserts that clause l is a base case, i.e., no IDBs in body """
+
+    def getBase(self, l):
+        const = []
+
+        bs = self.bodies[l]
+        head = self.heads[l]
+
+        bargs = []
+        for b in bs:
+            const.append(b >= 1)
+            const.append(b <= len(self.edb.irels))
+            bargs = bargs + self.argvars[b]
+
+        for harg in self.argvars[head]:
+            d = map(lambda x : x == harg , bargs)
+            const.append(Or(*d))
+
+        print const
+
+        return And(*const)
+
+    """ chain constraints for clause l for chain of length "length" """
+
+    def getChain(self, l, length):
+        const = []
+
+        bs = self.bodies[l]
+        head = self.heads[l]
+
+        ds = []
+        chain = []
+
+        # first and last arguments of chain
+        first = self.argvars[bs[0]][0]
+        last = self.argvars[bs[length - 1]][1]
+
+        # HACK:
+        # CURRENTLY ASSUMES ALL RELATIONS ARE BINARY
+        for i, b in enumerate(bs[0:length]):
+
+            args = self.argvars[b]
+
+            if i == 0:
+                ds.append(args[0])
+            if i == length - 1:
+                ds.append(args[1])
+                continue
+
+            argsNext = self.argvars[bs[i + 1]]
+            const.append(args[1] == argsNext[0])
+
+        # head arguments are beginning and end of chain
+        headc = And(self.argvars[head][0] == first,
+                    self.argvars[head][1] == last)
+        print headc
+        print const
+        print ds
+
+
+        # idb relations start at indices > n
+        n = len(self.edb.irels)
+        m = n + len(self.orels)
+
+
+        # at least one relation is IDB
+        dis = []
+        for b in bs[0:length]:
+            dis.append(And(b >= n + 1, b <= m))
+
+
+        return And(And(*const), Distinct(ds), headc, Or(*dis))
 
     """ simulation all enclosed here """
 
@@ -423,13 +501,13 @@ class STask:
 
             for i1, c1 in enumerate(cargs):
                 for i2, c2 in enumerate(cargs):
-                    if i1 == i2: continue
+                    if i1 == i2:
+                        continue
 
                     phi = Implies(c1 == c2, args[i1] == args[i2])
                     const.append(phi)
 
             return And(*const)
-
 
         # apply clause i at level l
         def applyClause(i, l):
@@ -489,8 +567,7 @@ class STask:
                 arr = idbArr[p.rel][self.bound]
                 neg.append(Not(Select(arr, t)))
 
-            return And(And(*pos),And(*neg))
-
+            return And(And(*pos), And(*neg))
 
         edbArr = {}
         edbFacts = {}
@@ -519,7 +596,7 @@ class STask:
             for j in range(1, argWidth + 1):
                 arg = Int("af" + str(i) + "-" + str(j))
                 args.append(arg)
-                argsConst.append(And(arg >= 1, arg <= self.domain-1))
+                argsConst.append(And(arg >= 1, arg <= self.domain - 1))
 
             # latches for frame i
             frameArgs[i] = args
@@ -527,13 +604,11 @@ class STask:
             # get frame constraint
             frames.append(And(getFrame(i), And(*argsConst)))
 
-
-
         frames = And(*frames)
         initConsts = And(*initConsts)
         correctness = getCorrectness()
         print "Correctness", correctness
-        #exit(1)
+        # exit(1)
         return And(initConsts, frames, correctness)
 
     # encodes variables in vs as their equivalence classes per model
@@ -551,21 +626,20 @@ class STask:
 
         print eq
         for k in eq:
-            for i in range(0,len(eq[k])-1):
-                consts.append(eq[k][i] == eq[k][i+1])
+            for i in range(0, len(eq[k]) - 1):
+                consts.append(eq[k][i] == eq[k][i + 1])
 
         for k1 in eq:
             for k2 in eq:
                 print k1, k2
-                if k1 == k2: continue
+                if k1 == k2:
+                    continue
                 print "here"
                 consts.append(eq[k1][0] != eq[k2][0])
 
         print "Equiv repr, ", consts
-        #exit(1)
+        # exit(1)
         return And(*consts)
-
-
 
     def negateModel(self, model):
         const = []
@@ -588,26 +662,27 @@ class STask:
             # get equivalence class
             equiv = self.getEquivClasses(model, vs)
 
-            #exit(1)
+            # exit(1)
             const = const + rels + [equiv]
         print "model repr, ", const
-        #exit(1)
+        # exit(1)
         return And(*const)
 
-    def getArgEqModel(self,model):
+    def getArgEqModel(self, model):
         modelF = []
 
         # collect all arg variables
-        for i in range(1,self.nc+1):
+        for i in range(1, self.nc + 1):
             vs = []
             modelFi = []
             vs = vs + self.argvars[self.heads[i]]
-            for j in range(1,self.nl+1):
-                vs = vs + self.argvars[self.bodies[i][j-1]]
+            for j in range(1, self.nl + 1):
+                vs = vs + self.argvars[self.bodies[i][j - 1]]
 
             for v1 in vs:
                 for v2 in vs:
-                    if v1 is v2: continue
+                    if v1 is v2:
+                        continue
                     if is_true(model.eval(v1 == v2)):
                         modelFi.append(v1 == v2)
                     else:
@@ -618,7 +693,6 @@ class STask:
 
         assert(is_true(model.eval(And(*modelF))))
         return And(*modelF)
-
 
     def synthesize(self, nc, nl, bound):
         # number of clauses
@@ -667,15 +741,15 @@ class STask:
                 bi.append(bv)
                 bodiesConst.append(And(bv >= 1, bv <= m))
 
-                ##### TEST
-                if i == 1:
-                    bodiesConst.append(And(bv == 1))
-
-                if i == 2:
-                    if j == 1:
-                        bodiesConst.append(And(bv == 1))
-                    else:
-                        bodiesConst.append(And(bv == 2))
+                # TEST
+                # if i == 1:
+                #     bodiesConst.append(And(bv == 1))
+                #
+                # if i == 2:
+                #     if j == 1:
+                #         bodiesConst.append(And(bv == 1))
+                #     else:
+                #         bodiesConst.append(And(bv == 2))
 
             bodies[i] = bi
             print bodies[i]
@@ -702,10 +776,10 @@ class STask:
                 argsConst.append(And(h >= 1, h <= argWidth))
 
                 # #####TEST
-                if j == 1:
-                    argsConst.append(h == 1)
-                if j == 2:
-                    argsConst.append(h == 2)
+                # if j == 1:
+                #     argsConst.append(h == 1)
+                # if j == 2:
+                #     argsConst.append(h == 2)
             argvars[heads[i]] = hvars
             argvarsset.update(hvars)
 
@@ -717,16 +791,15 @@ class STask:
                     bvars.append(b)
                     argsConst.append(And(b >= 1, b <= argWidth))
 
-                    #### TEST
-                    if i == 1 and k == 1:
-                        argsConst.append(b == 1)
-                    if i == 1 and k == 2:
-                        argsConst.append(b == 2)
+                    # TEST
+                    # if i == 1 and k == 1:
+                    #     argsConst.append(b == 1)
+                    # if i == 1 and k == 2:
+                    #     argsConst.append(b == 2)
 
                 argvars[bodies[i][j - 1]] = bvars
 
                 argvarsset.update(bvars)
-
 
         print "\n"
         print "Heads constraints", headsConst
@@ -746,14 +819,22 @@ class STask:
         print simulation
 
         # get symmetry constraint
-        symmetry = self.getSymmetry()
+        symmetry = True  # self.getSymmetry()
+        print self.argvars
 
-        #exit(1)
+        chain = And(self.getChain(2, 2))
+        base = self.getBase(1)
+
+        print chain
+
+        # exit(1)
         # solve verify loop
-        print symmetry
-        const = And(headsConst, bodiesConst, argsConst, symmetry, simulation)
 
-        #### TEST
+        print symmetry
+        const = And(headsConst, bodiesConst, argsConst,
+                    symmetry, chain, base, simulation)
+
+        # TEST
         #const = And(const, self.bodies[1][0] == 1, self.bodies[1][1] == 1)
         #const = And(const, self.bodies[2][0] == 1, self.bodies[2][1] == 2)
 
@@ -766,6 +847,7 @@ class STask:
             for c in clauses:
                 print c
             print "\n"
+            #raw_input()
 
             if clauses == None:
                 print "no solution exists"
@@ -776,9 +858,10 @@ class STask:
                 for c in clauses:
                     print c
 
-                #TEST
+                print "SOLVING TIME: ", self.time
+                # TEST
                 #phi = model.eval(simulation)
-                #solve(phi)
+                # solve(phi)
                 return True
             else:
                 modelF = self.negateModel(model)
@@ -791,24 +874,24 @@ class STask:
             i = i + 1
 
 
-rin = Relation("Rin", 2)
-rout = Relation("Rout", 2)
+rin = Relation("E", 2)
+rout = Relation("T", 2)
 assert(rin != rout)
 
-f1 = Fact(rin, 1, 2)
-f2 = Fact(rin, 2, 3)
+input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
 
 pe = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 1, 3)]
-ne = [Fact(rout, 3, 2), Fact(rout, 3, 3), Fact(rout, 2, 2), Fact(rout, 1,1), Fact(rout, 3,1), Fact(rout, 2, 1) ]
+ne = [Fact(rout, 3, 2), Fact(rout, 3, 3), Fact(rout, 2, 2),
+      Fact(rout, 1, 1), Fact(rout, 3, 1), Fact(rout, 2, 1)]
 # print f
 
 #assert(f != f2)
 
-x = EDB([rin], [f1, f2])
+x = EDB([rin], input)
 # print x
 
-s = STask(x, [rout], pe, ne, domain=4)
-s.synthesize(nc=2, nl=2, bound=3)
+s = STask(x, [rout], pe, ne, domain=5)
+s.synthesize(nc=2, nl=2, bound=4)
 # print f
 
 x = rin.l("a", "b", "c")
