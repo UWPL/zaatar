@@ -298,6 +298,49 @@ class STask:
 
         return And(*const)
 
+    """ Get constraint specifying that all locations should be connected """
+
+    def getEquality(self, l):
+        const = []
+
+        args = []
+
+        bs = self.bodies[l]
+        head = self.heads[l]
+
+        for r in bs + [head]:
+            args = args + self.argvars[r]
+
+        for a in args:
+            disj = []
+            for a2 in args:
+                if a is a2: continue
+                disj = disj + [a == a2]
+            const = const + [Or(*disj)]
+
+
+        print const
+
+        #exit(1)
+        return And(*const)
+
+    """ ensure one relation is IDB in clause l """
+
+    def getNonBase(self, l):
+        # idb relations start at indices > n
+        n = len(self.edb.irels)
+        m = n + len(self.orels)
+
+
+        # at least one relation is IDB
+        dis = []
+
+        for b in self.bodies[l]:
+            dis.append(And(b >= n + 1, b <= m))
+
+        return Or(*dis)
+
+
     """ chain constraints for clause l for chain of length "length" """
 
     def getChain(self, l, length):
@@ -347,7 +390,7 @@ class STask:
             dis.append(And(b >= n + 1, b <= m))
 
 
-        return And(And(*const), Distinct(ds), headc, Or(*dis))
+        return And(And(*const), Distinct(ds), headc)#, Or(*dis))
 
     """ simulation all enclosed here """
 
@@ -544,6 +587,9 @@ class STask:
 
             # integer indicating clause to apply
             S = Int('S' + str(l))
+
+            ruleArgs.append(S)
+
             consts.append(S >= 1)
             consts.append(S <= self.nc)
 
@@ -569,6 +615,19 @@ class STask:
 
             return And(And(*pos), And(*neg))
 
+        def getApplyAll():
+            conj = []
+
+            for i in range(1, self.nc+1):
+                disj = []
+
+                for s in ruleArgs:
+                    disj.append (s == i)
+
+                conj.append(Or(*disj))
+
+            return And(*conj)
+
         edbArr = {}
         edbFacts = {}
 
@@ -584,6 +643,8 @@ class STask:
 
         frames = []
         frameArgs = {}
+
+        ruleArgs = []
 
         # generate variables for all arities
         argWidth = self.na * (self.nl + 1)
@@ -604,12 +665,17 @@ class STask:
             # get frame constraint
             frames.append(And(getFrame(i), And(*argsConst)))
 
+
         frames = And(*frames)
         initConsts = And(*initConsts)
         correctness = getCorrectness()
+
+        applyAll = getApplyAll()
+        print "applyAll", applyAll
+
         print "Correctness", correctness
         # exit(1)
-        return And(initConsts, frames, correctness)
+        return And(initConsts, frames, correctness, applyAll)
 
     # encodes variables in vs as their equivalence classes per model
     def getEquivClasses(self, model, vs):
@@ -822,17 +888,22 @@ class STask:
         symmetry = True  # self.getSymmetry()
         print self.argvars
 
-        chain = And(self.getChain(2, 2))
-        base = self.getBase(1)
+        equality = True#And(self.getEquality(2), self.getEquality(1), self.getEquality(3), self.getEquality(4))
+
+        chain = And(self.getChain(3, 2), self.getChain(4,2), self.getChain(1,1), self.getChain(2,1))
+        base = And(self.getBase(1), self.getBase(2))#, self.getBase(2))
+        nonbase = And(self.getNonBase(3), self.getNonBase(4))
+
 
         print chain
+
 
         # exit(1)
         # solve verify loop
 
         print symmetry
         const = And(headsConst, bodiesConst, argsConst,
-                    symmetry, chain, base, simulation)
+                    symmetry, chain, base, nonbase, simulation, equality)
 
         # TEST
         #const = And(const, self.bodies[1][0] == 1, self.bodies[1][1] == 1)
@@ -876,24 +947,69 @@ class STask:
 
 rin = Relation("E", 2)
 rout = Relation("T", 2)
-assert(rin != rout)
 
-input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
+oblue = Relation("Outblue", 2)
+ored = Relation("Outred", 2)
 
-pe = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 1, 3)]
-ne = [Fact(rout, 3, 2), Fact(rout, 3, 3), Fact(rout, 2, 2),
-      Fact(rout, 1, 1), Fact(rout, 3, 1), Fact(rout, 2, 1)]
+blue = Relation("Blue", 2)
+red = Relation("Red", 2)
+
+
+# transitive closure
+# input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
+#
+# pe = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 1, 3)]
+# ne = [Fact(rout, 3, 2), Fact(rout, 3, 3), Fact(rout, 2, 2),
+#       Fact(rout, 1, 1), Fact(rout, 3, 1), Fact(rout, 2, 1)]
+#
+# x = EDB([rin], input)
+# s = STask(x, [rout], pe, ne, domain=5)
+# s.synthesize(nc=2, nl=2, bound=4)
+
+# same generation
+# input = [Fact(rin, 2, 1), Fact(rin, 3, 1), Fact(rin, 4, 2), Fact(rin, 5, 2), Fact(rin, 6 , 3), Fact(rin, 7, 3)]
+#
+# pe = [Fact(rout, 4, 5), Fact(rout, 6, 7), Fact(rout, 2, 3), Fact(rout, 5,6)]
+# ne = [Fact(rout, 2, 5), Fact(rout, 2, 4), Fact(rout, 3, 6),
+#        Fact(rout, 3, 1), Fact(rout, 3, 7), Fact(rout, 1,2), Fact(rout, 2,1)]
+#
+# x = EDB([rin], input)
+# s = STask(x, [rout], pe, ne, domain=8)
+# s.synthesize(nc=2, nl=3, bound=4)
+
+# # undirected TC
+# input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
+#
+# pe = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 3, 4), Fact(rout, 4,3), Fact(rout, 2, 1), Fact(rout, 1,4)]
+# ne = [Fact(rout, 1, 1)]
+#
+# x = EDB([rin], input)
+# s = STask(x, [rout], pe, ne, domain=5)
+# s.synthesize(nc=3, nl=2, bound=7)
+
+# alternating paths
+# input = [Fact(red, 1, 2), Fact(blue, 2, 3), Fact(red, 3, 4), Fact(blue, 4,5), Fact(red, 4,6)]
+#
+# pe = [Fact(rout, 1, 3), Fact(rout, 3, 5), Fact(rout, 1,5)]
+# ne = [Fact(rout, 1, 6)]
+#
+# x = EDB([ blue, red], input)
+# s = STask(x, [rout], pe, ne, domain=7)
+# s.synthesize(nc=2, nl=2, bound=3)
+
+# red and blue
+# requires chain
+input = [Fact(red, 1, 2), Fact(red, 2, 3), Fact(blue, 3, 4), Fact(blue, 4,5)]
+
+pe = [Fact(ored, 1,2), Fact(ored,2,3), Fact(ored, 1, 3), Fact(oblue, 3,4), Fact(oblue, 3, 5), Fact(oblue, 4,5) ]
+ne = [Fact(ored, 1, 5), Fact(ored, 3,1), Fact(ored, 2, 2), Fact(ored, 4,3), Fact(ored, 3,4),  Fact(ored, 2,1), Fact(oblue, 1,2), Fact(oblue,2,3), Fact(ored,4,5), Fact(ored, 1, 1), Fact(oblue, 1, 1), Fact(oblue, 5,3), Fact(oblue, 1,5), Fact(oblue, 1,3), Fact(oblue, 4,3), Fact(oblue, 5,3)]
+
+x = EDB([ blue, red], input)
+s = STask(x, [oblue, ored], pe, ne, domain=6)
+s.synthesize(nc=4, nl=2, bound=6)
+
 # print f
 
-#assert(f != f2)
-
-x = EDB([rin], input)
-# print x
-
-s = STask(x, [rout], pe, ne, domain=5)
-s.synthesize(nc=2, nl=2, bound=4)
-# print f
-
-x = rin.l("a", "b", "c")
-c = Clause(x, [x, x])
+# x = rin.l("a", "b", "c")
+# c = Clause(x, [x, x])
 # print x
