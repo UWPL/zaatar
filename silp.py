@@ -108,13 +108,16 @@ class STask:
             (models finite domain)
     """
 
-    def __init__(self, edb, orels, pf, nf, domain):
+    def __init__(self, edb, orels, pf, nf, domain, base=1, chain=False, soft=True):
         self.edb = edb
         self.orels = orels
         self.pfacts = pf
         self.nfacts = nf
         self.domain = domain
         self.time = 0
+        self.chain = chain
+        self.base = base
+        self.soft = soft
 
         # check all facts belong to declared relations
         for f in (nf + pf):
@@ -233,9 +236,14 @@ class STask:
         print clause
         return clause
 
-    def solveConst(self, phi):
-        s = Solver()
+    def solveConst(self, phi, softC):
+        s = Optimize()
+
         s.add(phi)
+
+        for c in softC:
+            s.add_soft(c)
+
         start = timer()
         res = s.check()
         end = timer()
@@ -392,6 +400,28 @@ class STask:
 
         return And(And(*const), Distinct(ds), headc)#, Or(*dis))
 
+    """ set of soft constraints asserting that all """
+
+    def getSoft(self):
+
+        consts = []
+
+        for i in range(1, self.nc+1):
+            bs = self.bodies[i]
+
+            seen = []
+            for b in bs:
+                for b2 in bs:
+                    if b is b2: continue
+                    if (b2,b) in seen: continue
+                    consts.append(b == b2)
+                    ba = self.argvars[b]
+                    b2a = self.argvars[b2]
+                    consts =  consts + map(lambda (a,b): a == b,zip(ba,b2a))
+                    seen = seen + [(b,b2)]
+
+        return consts
+
     """ simulation all enclosed here """
 
     def simulation(self):
@@ -492,7 +522,12 @@ class STask:
             # it is now True.
             consts.append(arrNext == Update(arrPrev, headTuple, True))
 
-            # FIXME: Need to constrain other relations
+            # constrains all relations that did not change
+            # in rule application
+            for i in idbArr:
+                if i is not idb:
+                    frame = idbArr[i][l - 1] == idbArr[i][l]
+                    consts.append(frame)
 
             print "head consts", consts
             return And(*consts)
@@ -565,6 +600,7 @@ class STask:
             for k in range(n + 1, m + 1):
                 lhs = h == k
                 rhs = constrainHead(i, k, l)
+                print "constrainHead", rhs
                 headConsts.append(Implies(lhs, rhs))
 
             for pos, b in enumerate(bs):
@@ -669,6 +705,7 @@ class STask:
         frames = And(*frames)
         initConsts = And(*initConsts)
         correctness = getCorrectness()
+
 
         applyAll = getApplyAll()
         print "applyAll", applyAll
@@ -888,22 +925,54 @@ class STask:
         symmetry = True  # self.getSymmetry()
         print self.argvars
 
-        equality = True#And(self.getEquality(2), self.getEquality(1), self.getEquality(3), self.getEquality(4))
+        equality = True
+        chain = True
 
-        chain = And(self.getChain(3, 2), self.getChain(4,2), self.getChain(1,1), self.getChain(2,1))
-        base = And(self.getBase(1), self.getBase(2))#, self.getBase(2))
-        nonbase = And(self.getNonBase(3), self.getNonBase(4))
+        # enforce chain rule
+        if self.chain:
+            # HACK: assumes chains of length 1 for base cases
+            # base case has chain of length 1
+            for i in range(1,self.base+1):
+                chain = And(chain, self.getChain(i,1))
 
+            for i in range(self.base+1, self.nc+1):
+                ichain = False
 
-        print chain
+                for j in range(1,self.nl+1):
+                    ichain = Or(ichain, self.getChain(i,j))
 
+                chain = And(chain, ichain)
+
+        # enforce equality -- weaker than chain
+        else:
+            for i in range(1, self.nc+1):
+                equality = And(equality, self.getEquality(i))
+
+        base = True
+
+        for i in range(1,self.base+1):
+            base = And(base, self.getBase(i))
+
+        nonbase = True
+        for i in range(self.base+1, self.nc+1):
+            nonbase = And(nonbase, self.getNonBase(i))
+
+        # print "b", base
+        # print "eq", equality
+        # print "ch", chain
+        # print "nb", nonbase
+        # exit(1)
+
+        if self.soft:
+            softC = self.getSoft()
+        else:
+            softC = []
 
         # exit(1)
         # solve verify loop
 
         print symmetry
-        const = And(headsConst, bodiesConst, argsConst,
-                    symmetry, chain, base, nonbase, simulation, equality)
+        const = And(headsConst, bodiesConst, argsConst, chain, base, nonbase, simulation, equality)
 
         # TEST
         #const = And(const, self.bodies[1][0] == 1, self.bodies[1][1] == 1)
@@ -913,7 +982,7 @@ class STask:
         while True:
             print "Iteration: ", i
 
-            (clauses, model) = self.solveConst(const)
+            (clauses, model) = self.solveConst(const, softC)
             print "Clauses: "
             for c in clauses:
                 print c
@@ -945,71 +1014,71 @@ class STask:
             i = i + 1
 
 
-rin = Relation("E", 2)
-rout = Relation("T", 2)
-
-oblue = Relation("Outblue", 2)
-ored = Relation("Outred", 2)
-
-blue = Relation("Blue", 2)
-red = Relation("Red", 2)
-
-
-# transitive closure
-# input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
+# rin = Relation("E", 2)
+# rout = Relation("T", 2)
 #
-# pe = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 1, 3)]
-# ne = [Fact(rout, 3, 2), Fact(rout, 3, 3), Fact(rout, 2, 2),
-#       Fact(rout, 1, 1), Fact(rout, 3, 1), Fact(rout, 2, 1)]
+# oblue = Relation("Outblue", 2)
+# ored = Relation("Outred", 2)
 #
-# x = EDB([rin], input)
-# s = STask(x, [rout], pe, ne, domain=5)
-# s.synthesize(nc=2, nl=2, bound=4)
-
-# same generation
-# input = [Fact(rin, 2, 1), Fact(rin, 3, 1), Fact(rin, 4, 2), Fact(rin, 5, 2), Fact(rin, 6 , 3), Fact(rin, 7, 3)]
+# blue = Relation("Blue", 2)
+# red = Relation("Red", 2)
 #
-# pe = [Fact(rout, 4, 5), Fact(rout, 6, 7), Fact(rout, 2, 3), Fact(rout, 5,6)]
-# ne = [Fact(rout, 2, 5), Fact(rout, 2, 4), Fact(rout, 3, 6),
-#        Fact(rout, 3, 1), Fact(rout, 3, 7), Fact(rout, 1,2), Fact(rout, 2,1)]
 #
-# x = EDB([rin], input)
-# s = STask(x, [rout], pe, ne, domain=8)
-# s.synthesize(nc=2, nl=3, bound=4)
-
-# # undirected TC
-# input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
+# # transitive closure
+# # input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
+# #
+# # pe = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 1, 3)]
+# # ne = [Fact(rout, 3, 2), Fact(rout, 3, 3), Fact(rout, 2, 2),
+# #       Fact(rout, 1, 1), Fact(rout, 3, 1), Fact(rout, 2, 1)]
+# #
+# # x = EDB([rin], input)
+# # s = STask(x, [rout], pe, ne, domain=5)
+# # s.synthesize(nc=2, nl=2, bound=4)
 #
-# pe = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 3, 4), Fact(rout, 4,3), Fact(rout, 2, 1), Fact(rout, 1,4)]
-# ne = [Fact(rout, 1, 1)]
+# # same generation
+# # input = [Fact(rin, 2, 1), Fact(rin, 3, 1), Fact(rin, 4, 2), Fact(rin, 5, 2), Fact(rin, 6 , 3), Fact(rin, 7, 3)]
+# #
+# # pe = [Fact(rout, 4, 5), Fact(rout, 6, 7), Fact(rout, 2, 3), Fact(rout, 5,6)]
+# # ne = [Fact(rout, 2, 5), Fact(rout, 2, 4), Fact(rout, 3, 6),
+# #        Fact(rout, 3, 1), Fact(rout, 3, 7), Fact(rout, 1,2), Fact(rout, 2,1)]
+# #
+# # x = EDB([rin], input)
+# # s = STask(x, [rout], pe, ne, domain=8)
+# # s.synthesize(nc=2, nl=3, bound=4)
 #
-# x = EDB([rin], input)
-# s = STask(x, [rout], pe, ne, domain=5)
-# s.synthesize(nc=3, nl=2, bound=7)
-
-# alternating paths
-# input = [Fact(red, 1, 2), Fact(blue, 2, 3), Fact(red, 3, 4), Fact(blue, 4,5), Fact(red, 4,6)]
+# # # undirected TC
+# # input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
+# #
+# # pe = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 3, 4), Fact(rout, 4,3), Fact(rout, 2, 1), Fact(rout, 1,4)]
+# # ne = [Fact(rout, 1, 1)]
+# #
+# # x = EDB([rin], input)
+# # s = STask(x, [rout], pe, ne, domain=5)
+# # s.synthesize(nc=3, nl=2, bound=7)
 #
-# pe = [Fact(rout, 1, 3), Fact(rout, 3, 5), Fact(rout, 1,5)]
-# ne = [Fact(rout, 1, 6)]
+# # alternating paths
+# # input = [Fact(red, 1, 2), Fact(blue, 2, 3), Fact(red, 3, 4), Fact(blue, 4,5), Fact(red, 4,6)]
+# #
+# # pe = [Fact(rout, 1, 3), Fact(rout, 3, 5), Fact(rout, 1,5)]
+# # ne = [Fact(rout, 1, 6)]
+# #
+# # x = EDB([ blue, red], input)
+# # s = STask(x, [rout], pe, ne, domain=7)
+# # s.synthesize(nc=2, nl=2, bound=3)
+#
+# # red and blue
+# # requires chain
+# input = [Fact(red, 1, 2), Fact(red, 2, 3), Fact(blue, 3, 4), Fact(blue, 4,5)]
+#
+# pe = [Fact(ored, 1,2), Fact(ored,2,3), Fact(ored, 1, 3), Fact(oblue, 3,4), Fact(oblue, 3, 5), Fact(oblue, 4,5) ]
+# ne = [Fact(ored, 1, 5), Fact(ored, 3,1), Fact(ored, 2, 2), Fact(ored, 4,3), Fact(ored, 3,4),  Fact(ored, 2,1), Fact(oblue, 1,2), Fact(oblue,2,3), Fact(ored,4,5), Fact(ored, 1, 1), Fact(oblue, 1, 1), Fact(oblue, 5,3), Fact(oblue, 1,5), Fact(oblue, 1,3), Fact(oblue, 4,3), Fact(oblue, 5,3)]
 #
 # x = EDB([ blue, red], input)
-# s = STask(x, [rout], pe, ne, domain=7)
-# s.synthesize(nc=2, nl=2, bound=3)
-
-# red and blue
-# requires chain
-input = [Fact(red, 1, 2), Fact(red, 2, 3), Fact(blue, 3, 4), Fact(blue, 4,5)]
-
-pe = [Fact(ored, 1,2), Fact(ored,2,3), Fact(ored, 1, 3), Fact(oblue, 3,4), Fact(oblue, 3, 5), Fact(oblue, 4,5) ]
-ne = [Fact(ored, 1, 5), Fact(ored, 3,1), Fact(ored, 2, 2), Fact(ored, 4,3), Fact(ored, 3,4),  Fact(ored, 2,1), Fact(oblue, 1,2), Fact(oblue,2,3), Fact(ored,4,5), Fact(ored, 1, 1), Fact(oblue, 1, 1), Fact(oblue, 5,3), Fact(oblue, 1,5), Fact(oblue, 1,3), Fact(oblue, 4,3), Fact(oblue, 5,3)]
-
-x = EDB([ blue, red], input)
-s = STask(x, [oblue, ored], pe, ne, domain=6)
-s.synthesize(nc=4, nl=2, bound=6)
-
-# print f
-
-# x = rin.l("a", "b", "c")
-# c = Clause(x, [x, x])
-# print x
+# s = STask(x, [oblue, ored], pe, ne, domain=6)
+# s.synthesize(nc=4, nl=2, bound=6)
+#
+# # print f
+#
+# # x = rin.l("a", "b", "c")
+# # c = Clause(x, [x, x])
+# # print x
