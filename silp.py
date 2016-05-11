@@ -33,6 +33,14 @@ class Literal:
         self.rel = rel
         self.args = args
 
+    def __eq__(self,other):
+        if self.rel != other.rel: return False
+        if self.args != other.args: return False
+        return True
+
+    def __hash__(self):
+        return hash(self.rel)
+
     def __repr__(self):
         if len(self.args) == 1:
             args = str(self.args[0])
@@ -89,12 +97,12 @@ class Clause:
         self.tail = tail
 
     def __repr__(self):
-        if len(self.tail) == 1:
+        if len(set(self.tail)) == 1:
             tailStr = str(self.tail[0])
-        elif len(self.tail) == 0:
+        elif len(set(self.tail)) == 0:
             tailStr = "true"
         else:
-            tailStr = reduce(lambda a, b: str(a) + ", " + str(b), self.tail)
+            tailStr = reduce(lambda a, b: str(a) + ", " + str(b), set(self.tail))
         return str(self.head) + " :- " + tailStr
 
 
@@ -236,10 +244,12 @@ class STask:
         print clause
         return clause
 
-    def solveConst(self, phi, softC):
+
+    def solveConst(self, phi, pos, softC):
         s = Optimize()
 
         s.add(phi)
+        s.add(And(*pos))
 
         for c in softC:
             s.add_soft(c)
@@ -316,6 +326,13 @@ class STask:
         bs = self.bodies[l]
         head = self.heads[l]
 
+        def inHead(a,a2):
+            l = self.argvars[head]
+            l1 = filter (lambda x: x is a, l)
+            l2 = filter (lambda x: x is a2, l)
+
+            return l1 != [] and l2 != []
+
         for r in bs + [head]:
             args = args + self.argvars[r]
 
@@ -323,13 +340,14 @@ class STask:
             disj = []
             for a2 in args:
                 if a is a2: continue
+                if inHead(a,a2):
+                    continue
                 disj = disj + [a == a2]
             const = const + [Or(*disj)]
 
 
         print const
 
-        #exit(1)
         return And(*const)
 
     """ ensure one relation is IDB in clause l """
@@ -380,8 +398,11 @@ class STask:
             const.append(args[1] == argsNext[0])
 
         # head arguments are beginning and end of chain
-        headc = And(self.argvars[head][0] == first,
-                    self.argvars[head][1] == last)
+        headc = Or(And(self.argvars[head][0] == first,
+                    self.argvars[head][1] == last),
+                    And(self.argvars[head][1] == first,
+                    self.argvars[head][0] == last))
+
         print headc
         print const
         print ds
@@ -414,10 +435,12 @@ class STask:
                 for b2 in bs:
                     if b is b2: continue
                     if (b2,b) in seen: continue
-                    consts.append(b == b2)
+                    #consts.append(b == b2)
                     ba = self.argvars[b]
                     b2a = self.argvars[b2]
-                    consts =  consts + map(lambda (a,b): a == b,zip(ba,b2a))
+                    #consts =  consts + map(lambda (a,b): a == b,zip(ba,b2a))
+                    l = map(lambda (a,b): a == b,zip(ba,b2a))
+                    consts  = consts + [And(b==b2,And(*l))]
                     seen = seen + [(b,b2)]
 
         return consts
@@ -649,7 +672,7 @@ class STask:
                 arr = idbArr[p.rel][self.bound]
                 neg.append(Not(Select(arr, t)))
 
-            return And(And(*pos), And(*neg))
+            return (pos,neg)
 
         def getApplyAll():
             conj = []
@@ -704,15 +727,15 @@ class STask:
 
         frames = And(*frames)
         initConsts = And(*initConsts)
-        correctness = getCorrectness()
+        (pos,neg) = getCorrectness()
 
 
         applyAll = getApplyAll()
         print "applyAll", applyAll
 
-        print "Correctness", correctness
+        #print "Correctness", correctness
         # exit(1)
-        return And(initConsts, frames, correctness, applyAll)
+        return (And(initConsts, frames, And(*neg), applyAll), pos)
 
     # encodes variables in vs as their equivalence classes per model
     def getEquivClasses(self, model, vs):
@@ -918,7 +941,7 @@ class STask:
         argsConst = And(*argsConst)
 
         # get simulation constraint
-        simulation = self.simulation()
+        (simulation,pos) = self.simulation()
         print simulation
 
         # get symmetry constraint
@@ -932,8 +955,8 @@ class STask:
         if self.chain:
             # HACK: assumes chains of length 1 for base cases
             # base case has chain of length 1
-            for i in range(1,self.base+1):
-                chain = And(chain, self.getChain(i,1))
+            #for i in range(1,self.base+1):
+            #    chain = And(chain, self.getChain(i,1))
 
             for i in range(self.base+1, self.nc+1):
                 ichain = False
@@ -942,11 +965,13 @@ class STask:
                     ichain = Or(ichain, self.getChain(i,j))
 
                 chain = And(chain, ichain)
+            #print simplify(chain)
+            #exit(1)
 
         # enforce equality -- weaker than chain
-        else:
-            for i in range(1, self.nc+1):
-                equality = And(equality, self.getEquality(i))
+
+        for i in range(1, self.nc+1):
+            equality = And(equality, self.getEquality(i))
 
         base = True
 
@@ -968,6 +993,8 @@ class STask:
         else:
             softC = []
 
+        softC = softC
+        #pos = []
         # exit(1)
         # solve verify loop
 
@@ -982,7 +1009,7 @@ class STask:
         while True:
             print "Iteration: ", i
 
-            (clauses, model) = self.solveConst(const, softC)
+            (clauses, model) = self.solveConst(const, pos, softC)
             print "Clauses: "
             for c in clauses:
                 print c

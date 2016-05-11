@@ -45,14 +45,36 @@ if args.benchmark == "EP":
 
 elif args.benchmark == "OP":
 # paths of odd length
-    input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin, 4, 5)]
+    input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin, 4, 5),Fact(rin,5,6)]
 
-    pe = [Fact(rout, 1, 2), Fact(rout, 2,3), Fact(rout, 1,4), Fact(rout, 2,5)]
+    pe = [Fact(rout, 1, 2), Fact(rout, 2,3), Fact(rout, 1,4), Fact(rout, 2,5),Fact(rout,1,6)]
     ne = [Fact(rout, 1, 3), Fact(rout, 5, 1), Fact(rout, 2, 4), Fact(rout, 1, 5), Fact(rout, 4, 2), Fact(rout, 3, 1)]
 
     x = EDB([rin], input)
-    s = STask(x, [rout], pe, ne, domain=6, base=1, soft=False)
+    s = STask(x, [rout], pe, ne, domain=7, base=1, soft=True, chain=False)
     s.synthesize(nc=2, nl=3, bound=6)
+
+elif args.benchmark == "OP3":
+# paths of length divisible by 3
+    input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin, 4, 5),Fact(rin,5,6), Fact(rin,6,7)]
+
+    pe = [Fact(rout, 1, 4), Fact(rout, 1, 7)]
+    ne = [Fact(rout, 1, 3), Fact(rout, 5, 1), Fact(rout, 2, 4), Fact(rout, 1, 5), Fact(rout, 4, 2), Fact(rout, 3, 1)]
+
+    x = EDB([rin], input)
+    s = STask(x, [rout], pe, ne, domain=8, base=1, soft=False, chain=False)
+    s.synthesize(nc=2, nl=4, bound=2)
+
+elif args.benchmark == "OP4":
+# paths of length divisible by 4
+    input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin, 4, 5),Fact(rin,5,6), Fact(rin,6,7), Fact(rin,7,8), Fact(rin,8,9)]
+
+    pe = [Fact(rout, 1, 5), Fact(rout, 1, 9)]
+    ne = [Fact(rout, 1, 3), Fact(rout, 5, 1), Fact(rout, 2, 4), Fact(rout, 4, 2), Fact(rout, 3, 1)]
+
+    x = EDB([rin], input)
+    s = STask(x, [rout], pe, ne, domain=10, base=1, soft=False, chain=False)
+    s.synthesize(nc=2, nl=5, bound=2)
 
 elif args.benchmark == "SG":
 # same generation
@@ -85,8 +107,8 @@ elif args.benchmark == "Eq":
     ne = [Fact(rout, 1, 6), Fact(rout, 2, 5), Fact(rout, 5, 1), Fact(rout, 3, 6)]
 
     x = EDB([rin], input)
-    s = STask(x, [rout], pe, ne, domain=7, base=2, soft=False)
-    s.synthesize(nc=5, nl=2, bound=7)
+    s = STask(x, [rout], pe, ne, domain=7, base=2, soft=False, chain=True)#True)
+    s.synthesize(nc=3, nl=2, bound=10)
 
 
 elif args.benchmark == "P3":
@@ -97,8 +119,10 @@ elif args.benchmark == "P3":
     ne = [Fact(rout, 1, 3), Fact(rout, 2, 3), Fact(rout, 1, 5), Fact(rout, 4, 2), Fact(rout, 1, 2)]
 
     x = EDB([rin], input)
-    s = STask(x, [rout], pe, ne, domain=6, base=2, soft=False)
-    s.synthesize(nc=2, nl=3, bound=3)
+    s = STask(x, [rout], pe, ne, domain=6, base=1, soft=True)
+    s.synthesize(nc=1, nl=3, bound=3)
+
+
 
 elif args.benchmark == "Triangle":
     # triangles
@@ -144,7 +168,7 @@ elif args.benchmark == "RBO":
     ne = [Fact(rout, 1, 5), Fact(rout, 3,1), Fact(rout, 2, 2), Fact(rout, 4,3), Fact(rout, 3,4),  Fact(rout, 2,1), Fact(rout, 1,2), Fact(rout,2,3), Fact(rout,4,5), Fact(rout, 1, 1), Fact(rout, 1, 1), Fact(rout, 5,3), Fact(rout, 1,5), Fact(rout, 1,3), Fact(rout, 4,3), Fact(rout, 5,3)]
 
     x = EDB([ blue, red], input)
-    s = STask(x, [rout, oblue, ored], pe, ne, domain=6, base=2, chain=Fale)
+    s = STask(x, [rout, oblue, ored], pe, ne, domain=6, base=2, chain=True)
     s.synthesize(nc=5, nl=2, bound=12)
 
 else:
