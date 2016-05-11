@@ -687,6 +687,14 @@ class STask:
 
             return And(*conj)
 
+        def getDerivSymmetry():
+            res = []
+            for i,s in enumerate(ruleArgs[:-1]):
+                imp = Implies(s > self.base, ruleArgs[i+1] > self.base)
+                res.append(imp)
+
+            return And(*res)
+
         edbArr = {}
         edbFacts = {}
 
@@ -724,7 +732,7 @@ class STask:
             # get frame constraint
             frames.append(And(getFrame(i), And(*argsConst)))
 
-
+        symmetry = getDerivSymmetry()
         frames = And(*frames)
         initConsts = And(*initConsts)
         (pos,neg) = getCorrectness()
@@ -735,7 +743,7 @@ class STask:
 
         #print "Correctness", correctness
         # exit(1)
-        return (And(initConsts, frames, And(*neg), applyAll), pos)
+        return (And(initConsts, frames, And(*neg), applyAll, symmetry), pos)
 
     # encodes variables in vs as their equivalence classes per model
     def getEquivClasses(self, model, vs):
@@ -945,7 +953,9 @@ class STask:
         print simulation
 
         # get symmetry constraint
-        symmetry = True  # self.getSymmetry()
+        symmetry = True
+        #if not self.chain:
+        #    symmetry = self.getSymmetry()
         print self.argvars
 
         equality = True

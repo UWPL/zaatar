@@ -120,7 +120,7 @@ elif args.benchmark == "P3":
 
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=6, base=1, soft=True)
-    s.synthesize(nc=1, nl=3, bound=3)
+    s.synthesize(nc=1, nl=3, bound=2)
 
 
 
@@ -156,7 +156,7 @@ elif args.benchmark == "RB":
     ne = [Fact(ored, 1, 5), Fact(ored, 3,1), Fact(ored, 2, 2), Fact(ored, 4,3), Fact(ored, 3,4),  Fact(ored, 2,1), Fact(oblue, 1,2), Fact(oblue,2,3), Fact(ored,4,5), Fact(ored, 1, 1), Fact(oblue, 1, 1), Fact(oblue, 5,3), Fact(oblue, 1,5), Fact(oblue, 1,3), Fact(oblue, 4,3), Fact(oblue, 5,3)]
 
     x = EDB([ blue, red], input)
-    s = STask(x, [oblue, ored], pe, ne, domain=6, base=2, chain=True)
+    s = STask(x, [oblue, ored], pe, ne, domain=6, base=2, chain=False)
     s.synthesize(nc=4, nl=2, bound=6)
 
 # red and blue -- one output relation
