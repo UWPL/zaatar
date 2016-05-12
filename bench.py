@@ -178,14 +178,14 @@ elif args.benchmark == "RBO":
 
 # Andersen
 elif args.benchmark == "And":
-    input = [Fact(aof,1,2), Fact(aof,1,3), Fact(asn,3,1)]
+    input = [Fact(aof,1,2), Fact(aof,2,3), Fact(asn,4,1)]
 
-    pe = [Fact(pts,1,2),Fact(pts,3,2),Fact(pts,2,3)]
+    pe = [Fact(pts,1,2),Fact(pts,2,3),Fact(pts,4,2)]
     ne = []
 
     x = EDB([aof, asn, store], input)
-    s = STask(x, [pts], pe, ne, domain=4, base=1, chain=True)
-    s.synthesize(nc=3, nl=2, bound=2)
+    s = STask(x, [pts], pe, ne, domain=5, base=1, chain=True)
+    s.synthesize(nc=2, nl=2, bound=3)
 
 else:
     print "No such benchmark available"
