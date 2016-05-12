@@ -116,8 +116,9 @@ elif args.benchmark == "Eq":
     s.synthesize(nc=3, nl=2, bound=10)
 
 
+# the next examples are for non-recursive conjunctive queries
 elif args.benchmark == "P3":
-    # path of length 3 (non-recursive)
+    # path of length 3
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin, 4, 5)]
 
     pe = [Fact(rout, 1, 4), Fact(rout, 2,5)]
@@ -126,7 +127,6 @@ elif args.benchmark == "P3":
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=6, base=1, soft=True)
     s.synthesize(nc=1, nl=3, bound=2)
-
 
 
 elif args.benchmark == "Triangle":
@@ -139,7 +139,6 @@ elif args.benchmark == "Triangle":
     x = EDB([rin], input)
     s = STask(x, [trout], pe, ne, domain=5, base=1, soft=False,chain=False)
     s.synthesize(nc=1, nl=3, bound=2)
-
 
 elif args.benchmark == "AP":
 # alternating paths
@@ -186,6 +185,21 @@ elif args.benchmark == "And":
     x = EDB([aof, asn, store], input)
     s = STask(x, [pts], pe, ne, domain=5, base=1, chain=True)
     s.synthesize(nc=2, nl=2, bound=3)
+
+# Andersen
+# PointsTo(y, x) :- AddressOf(y, x).
+# PointsTo(y, x) :- Assign(y, z), PointsTo(z, x).
+# PointsTo(z, w) :- Store(y, x), PointsTo(y, z), PointsTo(x, w).
+# PointsTo(y, w) :- Load(y, x), PointsTo(x, z), PointsTo(z, w).
+elif args.benchmark == "Andersen":
+    input = [Fact(aof,4,1), Fact(aof,5,2), Fact(aof,6,3), Fact(asn,8,3), Fact(asn,7,4), Fact(asn, 9, 7), Fact(store, 4,5), Fact(store,7,8)]
+
+    pe = [Fact(pts,4,1),Fact(pts,5,2),Fact(pts,9,1),Fact(pts,6,3),Fact(pts, 7,1),Fact(pts, 1,2), Fact(pts,1,3)]
+    ne = [Fact(pts, 1,4), Fact(pts, 7,5), Fact(pts, 6,5), Fact(pts, 2,1), Fact(pts, 9,3), Fact(pts,8,6)]
+
+    x = EDB([aof, asn, store], input)
+    s = STask(x, [pts], pe, ne, domain=10, base=1)
+    s.synthesize(nc=3, nl=3, bound=8)
 
 else:
     print "No such benchmark available"
