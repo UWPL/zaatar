@@ -176,17 +176,16 @@ elif args.benchmark == "RBO":
     s = STask(x, [rout, oblue, ored], pe, ne, domain=6, base=2, chain=True)
     s.synthesize(nc=5, nl=2, bound=12)
 
-# red and blue -- one output relation
-# requires chain to finish in 2sec
+# Andersen
 elif args.benchmark == "And":
-    input = [Fact(aof,1,2), Fact(asn,3,1),Fact(store,1,4)]
+    input = [Fact(aof,1,2), Fact(aof,1,3), Fact(asn,3,1), Fact(asnFact(store,1,3)]
 
     pe = [Fact(pts,1,2),Fact(pts,3,2),Fact(pts,2,3)]
     ne = []
 
     x = EDB([aof, asn, store], input)
-    s = STask(x, [pts], pe, ne, domain=5, base=1, chain=True)
-    s.synthesize(nc=3, nl=2, bound=3)
+    s = STask(x, [pts], pe, ne, domain=4, base=1, chain=True)
+    s.synthesize(nc=3, nl=2, bound=2)
 
 else:
     print "No such benchmark available"
