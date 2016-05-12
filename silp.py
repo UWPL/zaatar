@@ -214,7 +214,7 @@ class STask:
     def idToRel(self, relId):
         i = 1
         for r in self.edb.irels + self.orels:
-            print r
+            #print r
             if relId == i:
                 return r
 
@@ -351,6 +351,7 @@ class STask:
                     continue
                 disj = disj + [a == a2]
             const = const + [Or(*disj)]
+
 
         # HACK: if ternary relations
         if self.na == 3 and l == 1:
@@ -878,8 +879,17 @@ class STask:
         print "n = ", n
         print "m = ", m
 
+        for i in range(1,n+1):
+            print i, self.idToRel(i)
+
+
+        #exit(1)
+
+
+
         # create head and body literal variables
         for i in range(1, nc + 1):
+            print "********bodiesConst", bodiesConst
             heads[i] = intVar('H' + str(i))
             print heads[i]
             headsConst.append(And(heads[i] >= n + 1, heads[i] <= m))
@@ -891,19 +901,37 @@ class STask:
                 bi.append(bv)
                 bodiesConst.append(And(bv >= 1, bv <= m))
 
-                # TEST
-                # if i == 1:
-                #     bodiesConst.append(And(bv == 1))
-                #
-                # if i == 2:
-                #     if j == 1:
-                #         bodiesConst.append(And(bv == 1))
-                #     else:
-                #         bodiesConst.append(And(bv == 2))
+                # HACK: Andersen 4 constraints
+            #     if i == 1:
+            #        bodiesConst.append(bv == 1)
+            #     if i == 2:
+            #        bodiesConst.append(Or(bv == 2, bv == m))
+            #        #bodiesConst.append(m)
+            #
+            #     if i == 3:
+            #        bodiesConst.append(Or(bv == 3, bv == m))
+            #        #bodiesConst.append(m)
+            #
+            #     if i == 4:
+            #        bodiesConst.append(Or(bv == 4, bv == m))
+            #        #bodiesConst.append(m)
+            #
+            # andersen = []
+            # if i > 1:
+            #     disj = []
+            #     for b in bi:
+            #         disj.append(b == i)
+            #
+            #     #print "----->", disj
+            #     bodiesConst.append(Or(*disj))
+
 
             bodies[i] = bi
             print bodies[i]
 
+        #print "---------------------"
+        #for b in bodiesConst: print b
+        #exit(1)
         argvars = {}
         argvarsset = set()
 

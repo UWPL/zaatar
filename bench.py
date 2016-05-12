@@ -24,6 +24,7 @@ pts = Relation("ptsTo", 2)
 asn = Relation("asn", 2)
 aof = Relation("aof", 2)
 store = Relation("store", 2)
+load = Relation("load", 2)
 
 if args.benchmark == "TC":
 # transitive closure
@@ -175,31 +176,108 @@ elif args.benchmark == "RBO":
     s = STask(x, [rout, oblue, ored], pe, ne, domain=6, base=2, chain=True)
     s.synthesize(nc=5, nl=2, bound=12)
 
-# Andersen
-elif args.benchmark == "And":
-    input = [Fact(aof,1,2), Fact(aof,2,3), Fact(asn,4,1)]
+# Andersen (3 rules -- no load)
+elif args.benchmark == "And3":
+    input = [Fact(aof,1,2), Fact(aof,2,3), Fact(aof,3,5), Fact(aof,5,6), Fact(asn,4,1),
+    Fact(store,4,5)]
 
-    pe = [Fact(pts,1,2),Fact(pts,2,3),Fact(pts,4,2)]
+    pe = [Fact(pts,1,2),Fact(pts,2,3),Fact(pts,4,2), Fact(pts, 3,5), Fact(pts,5,6), Fact(pts,2,6)]
     ne = []
 
     x = EDB([aof, asn, store], input)
-    s = STask(x, [pts], pe, ne, domain=5, base=1, chain=True)
-    s.synthesize(nc=2, nl=2, bound=3)
+    s = STask(x, [pts], pe, ne, domain=7, base=1, chain=False)
+    s.synthesize(nc=3, nl=3, bound=6)
 
-# Andersen
+# Andersen (full)
 # PointsTo(y, x) :- AddressOf(y, x).
 # PointsTo(y, x) :- Assign(y, z), PointsTo(z, x).
 # PointsTo(z, w) :- Store(y, x), PointsTo(y, z), PointsTo(x, w).
 # PointsTo(y, w) :- Load(y, x), PointsTo(x, z), PointsTo(z, w).
-elif args.benchmark == "Andersen":
-    input = [Fact(aof,4,1), Fact(aof,5,2), Fact(aof,6,3), Fact(asn,8,3), Fact(asn,7,4), Fact(asn, 9, 7), Fact(store, 4,5), Fact(store,7,8)]
+elif args.benchmark == "And":
+    input = [
+    Fact(aof,1,2),
+    Fact(aof,2,3),
+    Fact(aof,3,5),
+    Fact(aof,5,6),
+    Fact(asn,4,1),
+    Fact(store,4,5),
+    Fact(load,7,2)
+    ]
 
-    pe = [Fact(pts,4,1),Fact(pts,5,2),Fact(pts,9,1),Fact(pts,6,3),Fact(pts, 7,1),Fact(pts, 1,2), Fact(pts,1,3)]
-    ne = [Fact(pts, 1,4), Fact(pts, 7,5), Fact(pts, 6,5), Fact(pts, 2,1), Fact(pts, 9,3), Fact(pts,8,6)]
+    pe = [
+    Fact(pts,1,2),
+    Fact(pts,2,3),
+    Fact(pts, 3,5),
+    Fact(pts,4,2),
+    Fact(pts,5,6),
+    Fact(pts,2,6),
+    Fact(pts,7,5)
+    ]
+    ne = [
+    Fact(pts,1,5)
+    ]
+
+    x = EDB([aof, asn, store, load], input)
+    s = STask(x, [pts], pe, ne, domain=8, base=1, chain=False)
+    s.synthesize(nc=4, nl=3, bound=7)
+
+# Steensgaard3
+# PointsTo(y, x) :- AddressOf(y, x).
+# ptsto(q,x) :- Assign(p,q), ptsto(p,x).
+# ptsto(q,x) :- store(p,q), ptsto(p,y), ptsto(y,x).
+# (not included) ptsto(q,y) :- load(p,q), ptsto(p,y), ptsto(q,x).
+elif args.benchmark == "Steen3":
+    input = [
+    Fact(aof,1,2),
+    Fact(aof,5,6),
+    Fact(aof,6,7),
+    Fact(asn,5,1),
+    Fact(store,5,1)
+    ]
+
+    pe = [
+    Fact(pts,1,2),
+    Fact(pts,5,6),
+    Fact(pts,6,7),
+    Fact(pts,1,6),
+    Fact(pts,1,7)
+    ]
+    ne = []
 
     x = EDB([aof, asn, store], input)
-    s = STask(x, [pts], pe, ne, domain=10, base=1)
-    s.synthesize(nc=3, nl=3, bound=8)
+    s = STask(x, [pts], pe, ne, domain=8, base=1, chain=False)
+    s.synthesize(nc=3, nl=3, bound=5)
+
+# Steensgaard (full)
+# PointsTo(y, x) :- AddressOf(y, x).
+# ptsto(q,x) :- Assign(p,q), ptsto(p,x).
+# ptsto(q,x) :- store(p,q), ptsto(p,y), ptsto(y,x).
+# ptsto(q,y) :- load(p,q), ptsto(p,y), ptsto(q,x).
+elif args.benchmark == "Steen":
+    input = [
+    Fact(aof,1,2),
+    Fact(aof,5,6),
+    Fact(aof,6,7),
+    Fact(asn,5,1),
+    Fact(store,5,1),
+    Fact(load,1,6)
+    ]
+
+    pe = [
+    Fact(pts,1,2),
+    Fact(pts,5,6),
+    Fact(pts,6,7),
+    Fact(pts,1,6),
+    Fact(pts,1,7),
+    Fact(pts,6,2)
+    ]
+    ne = []
+
+    x = EDB([aof, asn, store, load], input)
+    s = STask(x, [pts], pe, ne, domain=8, base=1, chain=False)
+    s.synthesize(nc=4, nl=3, bound=6)
+
+
 
 else:
     print "No such benchmark available"
