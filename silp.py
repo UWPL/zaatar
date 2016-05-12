@@ -188,14 +188,14 @@ class STask:
 
         # check pos examples
         for p in self.pfacts:
-            print "Checking pos", p
+            print "Checking pos", p, "-->", factToZ3(p)
 
             if s.query(factToZ3(p)) == unsat:
                 return False
 
         # check neg examples
         for n in self.nfacts:
-            print "Checking neg", n
+            print "Checking neg", n, "-->", Not(factToZ3(n))
 
             if s.query(Not(factToZ3(n))) == unsat:
                 return False
@@ -205,8 +205,9 @@ class STask:
     def getMaxArity(self):
         na = 0
         for r in (self.orels + self.edb.irels):
-            r.arity > na
-            na = r.arity
+            if (r.arity > na):
+                na = r.arity
+
 
         return na
 
@@ -228,7 +229,6 @@ class STask:
         h = self.heads[pos]
         headId = m[h].as_long()
         hargsId = map(lambda v: "X" + str(m[v]), self.argvars[h])
-
         headLiteral = self.idsToLit(headId, hargsId)
         # print headLiteral
 
@@ -322,6 +322,7 @@ class STask:
         const = []
 
         args = []
+        bargs = []
 
         bs = self.bodies[l]
         head = self.heads[l]
@@ -333,8 +334,14 @@ class STask:
 
             return l1 != [] and l2 != []
 
-        for r in bs + [head]:
-            args = args + self.argvars[r]
+        for r in bs:
+            args = args + self.argvars[r][0:2]
+
+        args = args + self.argvars[head]
+
+
+        for r in bs:
+            bargs = bargs + self.argvars[r]
 
         for a in args:
             disj = []
@@ -345,9 +352,14 @@ class STask:
                 disj = disj + [a == a2]
             const = const + [Or(*disj)]
 
+        # HACK: if ternary relations
+        if self.na == 3 and l == 1:
+            for i,a in enumerate(bargs[:-1]):
+                if (i+1) % 3 == 0:
+                    const.append(a == bargs[i-1])
 
         print const
-
+        #exit(1)
         return And(*const)
 
     """ ensure one relation is IDB in clause l """
@@ -576,7 +588,10 @@ class STask:
 
             tupleType = tup[rel]
             headTuple = frameArgs[l][begin:end]
+            print frameArgs[l]
             print headTuple
+            print rel
+            print tupleType
             headTuple = tupleType.tuple(*headTuple)
             print headTuple
 
@@ -715,7 +730,8 @@ class STask:
 
         # generate variables for all arities
         argWidth = self.na * (self.nl + 1)
-
+        print "wdit" , argWidth
+        print self.na
         for i in range(1, self.bound + 1):
             print "DOING FRAME", i
             # create frame variables denoting latches

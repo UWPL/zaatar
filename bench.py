@@ -20,6 +20,11 @@ ored = Relation("Outred", 2)
 blue = Relation("Blue", 2)
 red = Relation("Red", 2)
 
+pts = Relation("ptsTo", 2)
+asn = Relation("asn", 2)
+aof = Relation("aof", 2)
+store = Relation("store", 2)
+
 if args.benchmark == "TC":
 # transitive closure
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
@@ -126,14 +131,14 @@ elif args.benchmark == "P3":
 
 elif args.benchmark == "Triangle":
     # triangles
-    input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 1), Fact(rin, 1, 4)]
+    input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 1), Fact(rin,4,1), Fact(rin,1,4)]
 
     pe = [Fact(trout, 1, 2, 3), Fact(trout, 2, 3, 1)]
-    ne = [Fact(trout, 1, 3, 2), Fact(trout, 1, 1, 2), Fact(trout, 4, 1, 2), Fact(trout, 4, 2, 3), Fact(trout, 1, 3, 4)]
+    ne = [Fact(trout, 1, 3, 2), Fact(trout, 1, 1, 2), Fact(trout, 4, 1, 2), Fact(trout, 4, 2, 3), Fact(trout, 1, 3, 4), Fact(trout,2,4,1), Fact(trout,4,1,3), Fact(trout,4,2,1), Fact(trout,4,3,1)]
 
     x = EDB([rin], input)
-    s = STask(x, [trout], pe, ne, domain=5, base=2, soft=False)
-    s.synthesize(nc=2, nl=3, bound=3)
+    s = STask(x, [trout], pe, ne, domain=5, base=1, soft=False,chain=False)
+    s.synthesize(nc=1, nl=3, bound=2)
 
 
 elif args.benchmark == "AP":
@@ -170,6 +175,18 @@ elif args.benchmark == "RBO":
     x = EDB([ blue, red], input)
     s = STask(x, [rout, oblue, ored], pe, ne, domain=6, base=2, chain=True)
     s.synthesize(nc=5, nl=2, bound=12)
+
+# red and blue -- one output relation
+# requires chain to finish in 2sec
+elif args.benchmark == "And":
+    input = [Fact(aof,1,2), Fact(asn,3,1),Fact(store,1,4)]
+
+    pe = [Fact(pts,1,2),Fact(pts,3,2),Fact(pts,2,3)]
+    ne = []
+
+    x = EDB([aof, asn, store], input)
+    s = STask(x, [pts], pe, ne, domain=5, base=1, chain=True)
+    s.synthesize(nc=3, nl=2, bound=3)
 
 else:
     print "No such benchmark available"
