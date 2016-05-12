@@ -178,7 +178,7 @@ elif args.benchmark == "RBO":
 
 # Andersen
 elif args.benchmark == "And":
-    input = [Fact(aof,1,2), Fact(aof,1,3), Fact(asn,3,1), Fact(asnFact(store,1,3)]
+    input = [Fact(aof,1,2), Fact(aof,1,3), Fact(asn,3,1)]
 
     pe = [Fact(pts,1,2),Fact(pts,3,2),Fact(pts,2,3)]
     ne = []
