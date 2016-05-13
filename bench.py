@@ -12,6 +12,7 @@ args = parser.parse_args()
 
 rin = Relation("E", 2)
 rout = Relation("T", 2)
+oneout = Relation("O", 1)
 trout = Relation("Tr", 3)
 
 oblue = Relation("Outblue", 2)
@@ -37,6 +38,18 @@ if args.benchmark == "TC":
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=5, base=1)
     s.synthesize(nc=2, nl=2, bound=4)
+
+if args.benchmark == "Reach":
+# transitive closure from a starting point (2 in this case)
+    input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin, 2, 5), Fact(rin, 1,6)]
+
+    pe = [Fact(oneout, 3), Fact(oneout, 2), Fact(oneout, 4), Fact(oneout, 5)]
+    ne = [Fact(oneout, 1), Fact(oneout, 6)]
+
+    x = EDB([rin], input)
+    s = STask(x, [oneout], pe, ne, domain=7, base=1)
+    s.synthesize(nc=2, nl=3, bound=4)
+
 
 if args.benchmark == "EP":
 # paths of even length
@@ -129,9 +142,35 @@ elif args.benchmark == "P3":
     s = STask(x, [rout], pe, ne, domain=6, base=1, soft=True)
     s.synthesize(nc=1, nl=3, bound=2)
 
+elif args.benchmark == "RedBlue":
+    # starts red then blue
+    # T(x, y) :-  Red(x, z), Blue(z, y).
+    input = [Fact(red, 1, 2), Fact(blue, 2, 3), Fact(red, 3, 4), Fact(blue, 4,5), Fact(red, 4,6)]
+
+    pe = [Fact(rout, 1, 3), Fact(rout, 3,5)]
+    ne = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 1, 5), Fact(rout, 4, 2)]
+
+    x = EDB([red, blue], input)
+    s = STask(x, [rout], pe, ne, domain=7, base=1, soft=True)
+    s.synthesize(nc=1, nl=3, bound=2)
+
+elif args.benchmark == "RedBlueS":
+    # starts red then blue but symmetric
+    # T(x, y) :-  Red(x, z), Blue(z, y).
+    # T(y, x) :-  Red(x, z), Blue(z, y).
+    input = [Fact(red, 1, 2), Fact(blue, 2, 3), Fact(red, 3, 4), Fact(blue, 4,5), Fact(red, 4,6)]
+
+    pe = [Fact(rout, 1, 3), Fact(rout, 3,5), Fact(rout, 3, 1)]
+    ne = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 5, 1), Fact(rout, 4, 2)]
+
+    x = EDB([red, blue], input)
+    s = STask(x, [rout], pe, ne, domain=7, base=2, soft=True)
+    s.synthesize(nc=2, nl=3, bound=3)
+
 
 elif args.benchmark == "Triangle":
     # triangles
+    # Triangle(x, y, z) :- E(x, y), E(x, y), E(y, z).
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 1), Fact(rin,4,1), Fact(rin,1,4)]
 
     pe = [Fact(trout, 1, 2, 3), Fact(trout, 2, 3, 1)]
@@ -140,6 +179,20 @@ elif args.benchmark == "Triangle":
     x = EDB([rin], input)
     s = STask(x, [trout], pe, ne, domain=5, base=1, soft=False,chain=False)
     s.synthesize(nc=1, nl=3, bound=2)
+
+
+elif args.benchmark == "2C":
+    # vertex that stars a 2-cycle
+    # Out(x) :- E(x, y), E(y, x).
+    input = [Fact(rin, 1, 2), Fact(rin, 2, 1), Fact(rin, 3, 1), Fact(rin,4,1), Fact(rin,1,4), Fact(rin,4,5)]
+
+    pe = [Fact(oneout, 1), Fact(oneout, 2), Fact(oneout, 4)]
+    ne = [Fact(oneout,3), Fact(oneout, 5)]
+
+    x = EDB([rin], input)
+    s = STask(x, [oneout], pe, ne, domain=6, base=1, soft=False,chain=False)
+    s.synthesize(nc=1, nl=3, bound=3)
+
 
 elif args.benchmark == "AP":
 # alternating paths
