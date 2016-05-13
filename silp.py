@@ -845,6 +845,38 @@ class STask:
         assert(is_true(model.eval(And(*modelF))))
         return And(*modelF)
 
+    def stats(self,i):
+        stats = []
+
+        #time
+        stats.append("%.2f" % self.time)
+
+        # num of iters
+        stats.append(i)
+
+        # of input rels
+        stats.append(len(self.edb.irels))
+
+        # of output rels
+        stats.append(len(self.orels))
+
+        # of pos ex
+        stats.append(len(self.pfacts))
+
+        # of neg ex
+        stats.append(len(self.nfacts))
+
+        # of clauses
+        stats.append(self.nc)
+
+        # of literals
+        stats.append(self.nl)
+
+        # bound
+        stats.append(self.bound)
+
+        return stats
+
     def synthesize(self, nc, nl, bound):
         # number of clauses
         self.nc = nc
@@ -1080,10 +1112,12 @@ class STask:
                     print c
 
                 print "SOLVING TIME: ", self.time
+
                 # TEST
                 #phi = model.eval(simulation)
                 # solve(phi)
-                return True
+                s = self.stats(i)
+                return s
             else:
                 modelF = self.negateModel(model)
 
