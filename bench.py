@@ -37,6 +37,10 @@ call = Relation("call", 2)
 ret = Relation("ret", 2)
 inter = Relation("inter", 2)
 
+lp = Relation("L", 1)
+rp = Relation("R", 1)
+ns = Relation("Next", 2)
+
 if args.benchmark == "TC":
 # transitive closure
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
@@ -163,6 +167,23 @@ elif args.benchmark == "UTC":
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=5, base=2, soft=False)
     stats = s.synthesize(nc=2, nl=2, bound=7)
+
+elif args.benchmark == "Balance":
+    # balancing parentheses
+    # Balance(x, y) :- Left(x), Next(x, y), Right(y).
+    # Balance(x, y) :- Left(x), Balance(x, y), Right(y).
+    # Balance(x, y) :- Balance(x, z), Next(z, w), Balance(w, y).
+
+    input = [Fact(lp, 1), Fact(lp, 2), Fact(lp, 4), Fact(lp, 7),
+    Fact(rp, 3), Fact(rp, 5), Fact(rp, 6), Fact(rp, 8),
+    Fact(ns, 1, 2), Fact(ns, 2, 3), Fact(ns, 3,4), Fact(ns, 5, 6), Fact(ns, 6, 7), Fact(ns, 7, 8)]
+
+    pe = [Fact(rout, 2, 3), Fact(rout, 4, 5), Fact(rout, 2, 5), Fact(rout, 1, 6), Fact(rout, 7, 8), Fact(rout, 1, 8)]
+    ne = [Fact(rout, 2, 4), Fact(rout,  5, 1), Fact(rout, 1, 7), Fact(rout, 1, 3), Fact(rout, 2, 6), Fact(rout, 2, 7), Fact(rout, 7, 2), Fact(rout, 7, 3), Fact(rout, 4, 7), Fact(rout, 4, 8)]
+
+    x = EDB([lp, rp, ns], input)
+    s = STask(x, [rout], pe, ne, domain=9, base=1, soft=False)
+    stats = s.synthesize(nc=3, nl=3, bound=6)
 
 # elif args.benchmark == "Eq":
 #     # undirected TC
