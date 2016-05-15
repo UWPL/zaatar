@@ -877,6 +877,13 @@ class STask:
 
         return stats
 
+    def equal(self, l):
+        c = []
+        for i in range(0,len(l)-1):
+            c.append(l[i] == l[i+1])
+
+        return And(*c)
+
     def synthesize(self, nc, nl, bound):
         # number of clauses
         self.nc = nc
@@ -1011,6 +1018,41 @@ class STask:
 
                 argvarsset.update(bvars)
 
+        # The following code checks if we need
+        # to add extra constraints to ensure predicates with
+        # arity less than the max airty do not have unconstrained
+        # variables in the arguments
+        addArityConsts = False
+
+        aset = []
+        amap = []
+        for i,r in enumerate(self.edb.irels + self.orels):
+            if r.arity < self.na:
+                addArityConsts= True
+                aset.append((i+1,r.arity))
+
+
+
+        print addArityConsts
+
+        arityConsts = []
+
+        if addArityConsts:
+            for p in argvars:
+                pvars = argvars[p]
+                const = []
+                for (i,r) in aset:
+                    const.append(Implies(p==i, self.equal(pvars[r-1:self.na])))
+                arityConsts.append(And(*const))
+
+        print arityConsts
+        print self.idToRel(1)
+        print self.idToRel(2)
+
+        arityConsts = And(*arityConsts)
+
+
+
         print "\n"
         print "Heads constraints", headsConst
         print "Bodies constraints", bodiesConst
@@ -1085,7 +1127,7 @@ class STask:
         # solve verify loop
 
         print symmetry
-        const = And(headsConst, bodiesConst, argsConst, chain, base, nonbase, simulation, equality)
+        const = And(headsConst, bodiesConst, arityConsts, argsConst, chain, base, nonbase, simulation, equality)
 
         # TEST
         #const = And(const, self.bodies[1][0] == 1, self.bodies[1][1] == 1)

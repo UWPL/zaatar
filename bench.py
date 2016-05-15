@@ -41,6 +41,9 @@ lp = Relation("L", 1)
 rp = Relation("R", 1)
 ns = Relation("Next", 2)
 
+init = Relation("init", 1)
+inv = Relation("inv", 2)
+
 if args.benchmark == "TC":
 # transitive closure
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
@@ -352,6 +355,18 @@ elif args.benchmark == "And":
     x = EDB([aof, asn, store, load], input)
     s = STask(x, [pts], pe, ne, domain=8, base=1, chain=False)
     stats = s.synthesize(nc=4, nl=3, bound=7)
+
+if args.benchmark == "INV":
+# transitive closure
+    input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4),Fact(rin,5,6),
+            Fact(init,1)]
+
+    pe = [Fact(oneout, 1), Fact(oneout, 2), Fact(oneout, 3),Fact(oneout,4)]
+    ne = [Fact(oneout,5),Fact(oneout,6)]
+
+    x = EDB([rin,init], input)
+    s = STask(x, [oneout], pe, ne, domain=7, base=1)
+    stats = s.synthesize(nc=2, nl=2, bound=4)
 
 # Steensgaard3
 # PointsTo(y, x) :- AddressOf(y, x).
