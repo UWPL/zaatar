@@ -41,6 +41,10 @@ lp = Relation("L", 2)
 rp = Relation("R", 2)
 ns = Relation("Next", 2)
 
+up = Relation("up", 2)
+down = Relation("down", 2)
+flat = Relation("flat", 2)
+
 init = Relation("init", 1)
 inv = Relation("inv", 2)
 
@@ -160,6 +164,22 @@ elif args.benchmark == "SG":
     s = STask(x, [rout], pe, ne, domain=8, base=1, soft=False)
     stats = s.synthesize(nc=2, nl=3, bound=4)
 
+
+elif args.benchmark == "UpDown":
+# same generation with up/down
+    input = [Fact(up, 7, 1), Fact(up, 8, 1), Fact(up, 1, 2),
+    Fact(down, 3, 4), Fact(down, 3 , 5), Fact(down, 4, 6),
+    Fact(flat, 2, 3)]
+
+    pe = [Fact(rout, 2, 3), Fact(rout, 1, 4), Fact(rout, 1, 5), Fact(rout, 7,6), Fact(rout, 8, 6)]
+    ne = [Fact(rout, 2, 5), Fact(rout, 2, 4), Fact(rout, 3, 6),
+           Fact(rout, 3, 1), Fact(rout, 3, 7), Fact(rout, 1,2), Fact(rout, 1, 6)]
+
+    x = EDB([up, down, flat], input)
+    s = STask(x, [rout], pe, ne, domain=8, base=1, soft=False)
+    stats = s.synthesize(nc=2, nl=3, bound=5)
+
+
 elif args.benchmark == "UTC":
     # undirected TC
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
@@ -179,7 +199,7 @@ elif args.benchmark == "Balance":
 
     input = [Fact(lp, 1, 1), Fact(lp, 2,2), Fact(lp, 4,4), Fact(lp, 7,7),
     Fact(rp, 3,3), Fact(rp, 5,5), Fact(rp, 6,6), Fact(rp, 8,8),
-    Fact(ns, 1, 2), Fact(ns, 2, 3), Fact(ns, 3,4), Fact(ns, 5, 6), Fact(ns, 6, 7), Fact(ns, 7, 8)]
+    Fact(ns, 1, 2), Fact(ns, 2, 3), Fact(ns, 3,4), Fact(ns, 4, 5), Fact(ns, 5, 6), Fact(ns, 6, 7), Fact(ns, 7, 8)]
 
     pe = [Fact(rout, 2, 3), Fact(rout, 4, 5), Fact(rout, 2, 5), Fact(rout, 1, 6), Fact(rout, 7, 8), Fact(rout, 1, 8)]
     ne = [Fact(rout, 2, 4), Fact(rout,  5, 1), Fact(rout, 1, 7), Fact(rout, 1, 3), Fact(rout, 2, 6), Fact(rout, 2, 7), Fact(rout, 7, 2), Fact(rout, 7, 3), Fact(rout, 4, 7), Fact(rout, 4, 8)]
