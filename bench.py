@@ -179,13 +179,13 @@ elif args.benchmark == "Balance":
 
     input = [Fact(lp, 1, 1), Fact(lp, 2,2), Fact(lp, 4,4), Fact(lp, 7,7),
     Fact(rp, 3,3), Fact(rp, 5,5), Fact(rp, 6,6), Fact(rp, 8,8),
-    Fact(ns, 1, 2), Fact(ns, 2, 3), Fact(ns, 3,4), Fact(ns, 5, 6), Fact(ns, 6, 7), Fact(ns, 7, 8)]
+    Fact(ns, 1, 2), Fact(ns, 2, 3), Fact(ns, 3,4), Fact(ns,4,5), Fact(ns, 5, 6), Fact(ns, 6, 7), Fact(ns, 7, 8)]
 
     pe = [Fact(rout, 2, 3), Fact(rout, 4, 5), Fact(rout, 2, 5), Fact(rout, 1, 6), Fact(rout, 7, 8), Fact(rout, 1, 8)]
     ne = [Fact(rout, 2, 4), Fact(rout,  5, 1), Fact(rout, 1, 7), Fact(rout, 1, 3), Fact(rout, 2, 6), Fact(rout, 2, 7), Fact(rout, 7, 2), Fact(rout, 7, 3), Fact(rout, 4, 7), Fact(rout, 4, 8)]
 
     x = EDB([lp, rp, ns], input)
-    s = STask(x, [rout], pe, ne, domain=9, base=1, soft=False)
+    s = STask(x, [rout], pe, ne, domain=9, base=1, soft=False, chain=True)
     stats = s.synthesize(nc=3, nl=3, bound=6)
 
 # elif args.benchmark == "Eq":
