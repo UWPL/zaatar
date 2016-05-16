@@ -1089,7 +1089,7 @@ class STask:
             for i in range(self.base+1, self.nc+1):
                 ichain = False
 
-                for j in range(1,self.nl+1):
+                for j in range(self.nl,self.nl+1):
                     ichain = Or(ichain, self.getChain(i,j))
 
                 chain = And(chain, ichain)

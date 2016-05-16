@@ -205,7 +205,7 @@ elif args.benchmark == "Balance":
     ne = [Fact(rout, 2, 4), Fact(rout,  5, 1), Fact(rout, 1, 7), Fact(rout, 1, 3), Fact(rout, 2, 6), Fact(rout, 2, 7), Fact(rout, 7, 2), Fact(rout, 7, 3), Fact(rout, 4, 7), Fact(rout, 4, 8)]
 
     x = EDB([lp, rp, ns], input)
-    s = STask(x, [rout], pe, ne, domain=9, base=1, soft=False)
+    s = STask(x, [rout], pe, ne, domain=9, base=1, soft=False, chain=True)
     stats = s.synthesize(nc=3, nl=3, bound=6)
 
 # elif args.benchmark == "Eq":
