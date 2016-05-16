@@ -41,6 +41,10 @@ lp = Relation("L", 1)
 rp = Relation("R", 1)
 ns = Relation("Next", 2)
 
+up = Relation("up", 2)
+down = Relation("down", 2)
+flat = Relation("flat", 2)
+
 init = Relation("init", 1)
 inv = Relation("inv", 2)
 
@@ -159,6 +163,22 @@ elif args.benchmark == "SG":
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=8, base=1, soft=False)
     stats = s.synthesize(nc=2, nl=3, bound=4)
+
+
+elif args.benchmark == "UpDown":
+# same generation with up/down
+    input = [Fact(up, 7, 1), Fact(up, 8, 1), Fact(up, 1, 2),
+    Fact(down, 3, 4), Fact(down, 3 , 5), Fact(down, 4, 6),
+    Fact(flat, 2, 3)]
+
+    pe = [Fact(rout, 2, 3), Fact(rout, 1, 4), Fact(rout, 1, 5), Fact(rout, 7,6), Fact(rout, 8, 6)]
+    ne = [Fact(rout, 2, 5), Fact(rout, 2, 4), Fact(rout, 3, 6),
+           Fact(rout, 3, 1), Fact(rout, 3, 7), Fact(rout, 1,2), Fact(rout, 1, 6)]
+
+    x = EDB([up, down, flat], input)
+    s = STask(x, [rout], pe, ne, domain=8, base=1, soft=False)
+    stats = s.synthesize(nc=2, nl=3, bound=5)
+
 
 elif args.benchmark == "UTC":
     # undirected TC
