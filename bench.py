@@ -176,7 +176,7 @@ elif args.benchmark == "UpDown":
            Fact(rout, 3, 1), Fact(rout, 3, 7), Fact(rout, 1,2), Fact(rout, 1, 6)]
 
     x = EDB([up, down, flat], input)
-    s = STask(x, [rout], pe, ne, domain=8, base=1, soft=False)
+    s = STask(x, [rout], pe, ne, domain=9, base=1, soft=False)
     stats = s.synthesize(nc=2, nl=3, bound=5)
 
 
