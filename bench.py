@@ -37,8 +37,8 @@ call = Relation("call", 2)
 ret = Relation("ret", 2)
 inter = Relation("inter", 2)
 
-lp = Relation("L", 2)
-rp = Relation("R", 2)
+lp = Relation("L", 1)
+rp = Relation("R", 1)
 ns = Relation("Next", 2)
 
 init = Relation("init", 1)
@@ -177,8 +177,8 @@ elif args.benchmark == "Balance":
     # Balance(x, y) :- Left(x), Balance(x, y), Right(y).
     # Balance(x, y) :- Balance(x, z), Next(z, w), Balance(w, y).
 
-    input = [Fact(lp, 1, 1), Fact(lp, 2,2), Fact(lp, 4,4), Fact(lp, 7,7),
-    Fact(rp, 3,3), Fact(rp, 5,5), Fact(rp, 6,6), Fact(rp, 8,8),
+    input = [Fact(lp, 1), Fact(lp, 2), Fact(lp, 4), Fact(lp, 7),
+    Fact(rp, 3), Fact(rp, 5), Fact(rp, 6), Fact(rp, 8),
     Fact(ns, 1, 2), Fact(ns, 2, 3), Fact(ns, 3,4), Fact(ns,4,5), Fact(ns, 5, 6), Fact(ns, 6, 7), Fact(ns, 7, 8)]
 
     pe = [Fact(rout, 2, 3), Fact(rout, 4, 5), Fact(rout, 2, 5), Fact(rout, 1, 6), Fact(rout, 7, 8), Fact(rout, 1, 8)]
