@@ -11,6 +11,7 @@ parser.add_argument("-l", "--log", required=False, action='store_true',
                         help="log stats to res.csv")
 
 
+
 args = parser.parse_args()
 
 
@@ -53,8 +54,7 @@ if args.benchmark == "TC":
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4)]
 
     pe = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 1, 3)]
-    ne = [Fact(rout, 3, 2), Fact(rout, 3, 3), Fact(rout, 2, 2),
-          Fact(rout, 1, 1), Fact(rout, 3, 1), Fact(rout, 2, 1)]
+    ne = []
 
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=5, base=1)
@@ -113,7 +113,7 @@ elif args.benchmark == "EP":
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin,4,5)]
 
     pe = [Fact(rout, 1, 3), Fact(rout, 2, 4), Fact(rout,1,5)]
-    ne = [Fact(rout, 1, 2), Fact(rout,3,1), Fact(rout,1,1), Fact(rout,2,1), Fact(rout,3,3), Fact(rout,1,4), Fact(rout, 3,4)]
+    ne = []
 
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=6, base=1, chain=False)
@@ -124,7 +124,7 @@ elif args.benchmark == "OP":
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin, 4, 5),Fact(rin,5,6)]
 
     pe = [Fact(rout, 1, 2), Fact(rout, 2,3), Fact(rout, 1,4), Fact(rout, 2,5),Fact(rout,1,6)]
-    ne = [Fact(rout, 1, 3), Fact(rout, 5, 1), Fact(rout, 2, 4), Fact(rout, 1, 5), Fact(rout, 4, 2), Fact(rout, 3, 1)]
+    ne = [ Fact(rout, 5, 1), Fact(rout, 2, 4), Fact(rout, 1, 5), Fact(rout, 4, 2), Fact(rout, 3, 1)]
 
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=7, base=1, soft=True, chain=False)
@@ -135,7 +135,7 @@ elif args.benchmark == "OP3":
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin, 4, 5),Fact(rin,5,6), Fact(rin,6,7)]
 
     pe = [Fact(rout, 1, 4), Fact(rout, 1, 7)]
-    ne = [Fact(rout, 1, 3), Fact(rout, 5, 1), Fact(rout, 2, 4), Fact(rout, 1, 5), Fact(rout, 4, 2), Fact(rout, 3, 1)]
+    ne = [Fact(rout, 1, 3),  Fact(rout, 2, 4), Fact(rout, 1, 5), Fact(rout, 4, 2), Fact(rout, 3, 1)]
 
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=8, base=1, soft=False, chain=False)
@@ -157,8 +157,7 @@ elif args.benchmark == "SG":
     input = [Fact(rin, 2, 1), Fact(rin, 3, 1), Fact(rin, 4, 2), Fact(rin, 5, 2), Fact(rin, 6 , 3), Fact(rin, 7, 3)]
 
     pe = [Fact(rout, 4, 5), Fact(rout, 6, 7), Fact(rout, 2, 3), Fact(rout, 5,6)]
-    ne = [Fact(rout, 2, 5), Fact(rout, 2, 4), Fact(rout, 3, 6),
-           Fact(rout, 3, 1), Fact(rout, 3, 7), Fact(rout, 1,2), Fact(rout, 2,1)]
+    ne = [Fact(rout, 2, 5)]
 
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=8, base=1, soft=False)
@@ -189,7 +188,7 @@ elif args.benchmark == "UTC":
 
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=5, base=2, soft=False)
-    stats = s.synthesize(nc=2, nl=2, bound=7)
+    stats = s.synthesize(nc=3, nl=2, bound=7)
 
 elif args.benchmark == "Balance":
     # balancing parentheses
@@ -225,8 +224,8 @@ elif args.benchmark == "P3":
     # path of length 3
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin, 4, 5)]
 
-    pe = [Fact(rout, 1, 4), Fact(rout, 2,5)]
-    ne = [Fact(rout, 1, 3), Fact(rout, 2, 3), Fact(rout, 1, 5), Fact(rout, 4, 2), Fact(rout, 1, 2)]
+    pe = [Fact(rout, 1, 4)]
+    ne = []
 
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=6, base=1, soft=True)
@@ -237,7 +236,7 @@ elif args.benchmark == "P4":
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin, 4, 5),Fact(rin,5,6)]
 
     pe = [Fact(rout, 1, 5), Fact(rout, 2,6)]
-    ne = [Fact(rout, 1, 3), Fact(rout, 2, 3), Fact(rout, 4, 2), Fact(rout, 1, 2)]
+    ne = []
 
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=7, base=1, soft=False)
@@ -249,8 +248,8 @@ elif args.benchmark == "RedBlue":
     # T(x, y) :-  Red(x, z), Blue(z, y).
     input = [Fact(red, 1, 2), Fact(blue, 2, 3), Fact(red, 3, 4), Fact(blue, 4,5), Fact(red, 4,6)]
 
-    pe = [Fact(rout, 1, 3), Fact(rout, 3,5)]
-    ne = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 1, 5), Fact(rout, 4, 2)]
+    pe = [Fact(rout, 1, 3)]
+    ne = []
 
     x = EDB([red, blue], input)
     s = STask(x, [rout], pe, ne, domain=7, base=1, soft=True)
@@ -262,8 +261,9 @@ elif args.benchmark == "RedBlueS":
     # T(y, x) :-  Red(x, z), Blue(z, y).
     input = [Fact(red, 1, 2), Fact(blue, 2, 3), Fact(red, 3, 4), Fact(blue, 4,5), Fact(red, 4,6)]
 
-    pe = [Fact(rout, 1, 3), Fact(rout, 3,5), Fact(rout, 3, 1)]
-    ne = [Fact(rout, 1, 2), Fact(rout, 2, 3), Fact(rout, 5, 1), Fact(rout, 4, 2)]
+    pe = [ Fact(rout, 3,5), Fact(rout, 3, 1)]
+    ne = []
+            #, Fact(rout, 2, 3), Fact(rout, 5, 1), Fact(rout, 4, 2)]
 
     x = EDB([red, blue], input)
     s = STask(x, [rout], pe, ne, domain=7, base=2, soft=True)
@@ -276,7 +276,7 @@ elif args.benchmark == "Triangle":
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 1), Fact(rin,4,1), Fact(rin,1,4)]
 
     pe = [Fact(trout, 1, 2, 3), Fact(trout, 2, 3, 1)]
-    ne = [Fact(trout, 1, 3, 2), Fact(trout, 1, 1, 2), Fact(trout, 4, 1, 2), Fact(trout, 4, 2, 3), Fact(trout, 1, 3, 4), Fact(trout,2,4,1), Fact(trout,4,1,3), Fact(trout,4,2,1), Fact(trout,4,3,1)]
+    ne = [Fact(trout, 1, 3, 2), Fact(trout, 1, 1, 2), Fact(trout, 4, 1, 2), Fact(trout, 4, 2, 3), Fact(trout, 1, 3, 4), Fact(trout,2,4,1), Fact(trout,4,1,3), Fact(trout,4,3,1)]
 
     x = EDB([rin], input)
     s = STask(x, [trout], pe, ne, domain=5, base=1, soft=False,chain=False)
@@ -289,7 +289,7 @@ elif args.benchmark == "2C":
     input = [Fact(rin, 1, 2), Fact(rin, 2, 1), Fact(rin, 3, 1), Fact(rin,4,1), Fact(rin,1,4), Fact(rin,4,5)]
 
     pe = [Fact(oneout, 1), Fact(oneout, 2), Fact(oneout, 4)]
-    ne = [Fact(oneout,3), Fact(oneout, 5)]
+    ne = []
 
     x = EDB([rin], input)
     s = STask(x, [oneout], pe, ne, domain=6, base=1, soft=False,chain=False)
@@ -313,7 +313,7 @@ elif args.benchmark == "RB":
     input = [Fact(red, 1, 2), Fact(red, 2, 3), Fact(blue, 3, 4), Fact(blue, 4,5)]
 
     pe = [Fact(ored, 1,2), Fact(ored,2,3), Fact(ored, 1, 3), Fact(oblue, 3,4), Fact(oblue, 3, 5), Fact(oblue, 4,5) ]
-    ne = [Fact(ored, 1, 5), Fact(ored, 3,1), Fact(ored, 2, 2), Fact(ored, 4,3), Fact(ored, 3,4),  Fact(ored, 2,1), Fact(oblue, 1,2), Fact(oblue,2,3), Fact(ored,4,5), Fact(ored, 1, 1), Fact(oblue, 1, 1), Fact(oblue, 5,3), Fact(oblue, 1,5), Fact(oblue, 1,3), Fact(oblue, 4,3), Fact(oblue, 5,3)]
+    ne = []
 
     x = EDB([ blue, red], input)
     s = STask(x, [oblue, ored], pe, ne, domain=6, base=2, chain=False)
@@ -340,7 +340,7 @@ elif args.benchmark == "And3":
     ne = []
 
     x = EDB([aof, asn, store], input)
-    s = STask(x, [pts], pe, ne, domain=7, base=1, chain=False)
+    s = STask(x, [pts], pe, ne, domain=7, base=1, chain=False,andersen=True)
     stats = s.synthesize(nc=3, nl=3, bound=6)
 
 # Andersen (full)
@@ -373,7 +373,7 @@ elif args.benchmark == "And":
     ]
 
     x = EDB([aof, asn, store, load], input)
-    s = STask(x, [pts], pe, ne, domain=8, base=1, chain=False)
+    s = STask(x, [pts], pe, ne, domain=8, base=1, chain=False,andersen=True)
     stats = s.synthesize(nc=4, nl=3, bound=7)
 
 if args.benchmark == "INV":
