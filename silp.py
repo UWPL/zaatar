@@ -116,7 +116,7 @@ class STask:
             (models finite domain)
     """
 
-    def __init__(self, edb, orels, pf, nf, domain, base=1, chain=False, soft=True):
+    def __init__(self, edb, orels, pf, nf, domain, base=1, chain=False, soft=True,andersen=False):
         self.edb = edb
         self.orels = orels
         self.pfacts = pf
@@ -126,6 +126,7 @@ class STask:
         self.chain = chain
         self.base = base
         self.soft = soft
+        self.andersen=andersen
 
         # check all facts belong to declared relations
         for f in (nf + pf):
@@ -362,6 +363,47 @@ class STask:
         print const
         #exit(1)
         return And(*const)
+
+    """ ensures all body atoms are connected and head is connected """
+    def getConnected(self, l):
+        const = []
+
+        bs = self.bodies[l]
+        head = self.heads[l]
+
+        bargs = []
+        for b in bs:
+            bargs = bargs + self.argvars[b]
+
+        for b in bs:
+            args = self.argvars[b]
+            preargs = []
+
+            for bp in bs:
+                if bp is b:
+                    continue
+                preargs = preargs + self.argvars[bp]
+
+            preargs = preargs + self.argvars[head]
+            print b, preargs
+
+            for a in args:
+                disj = []
+                for p in preargs:
+                    disj.append(a==p)
+                if disj != []:
+                    const = const + [Or(*disj)]
+
+        for a in self.argvars[head]:
+            disj = []
+            for b in bargs:
+                disj.append(a == b)
+
+            assert(disj != [])
+            const = const + [Or(*disj)]
+
+        return And(*const)
+
 
     """ ensure one relation is IDB in clause l """
 
@@ -854,11 +896,16 @@ class STask:
         # num of iters
         stats.append(i)
 
+        # of facts
+        stats.append(len(self.edb.facts))
+        
         # of input rels
         stats.append(len(self.edb.irels))
 
         # of output rels
         stats.append(len(self.orels))
+
+
 
         # of pos ex
         stats.append(len(self.pfacts))
@@ -872,8 +919,6 @@ class STask:
         # of literals
         stats.append(self.nl)
 
-        # bound
-        stats.append(self.bound)
 
         return stats
 
@@ -939,30 +984,31 @@ class STask:
                 bv = intVar('B' + str(i) + "-" + str(j))
                 bi.append(bv)
                 bodiesConst.append(And(bv >= 1, bv <= m))
+                if self.andersen:
+                    # HACK: Andersen 4 constraints
+                    if i == 1:
+                       bodiesConst.append(bv == 1)
+                    if i == 2:
+                       bodiesConst.append(Or(bv == 2, bv == m))
+                       #bodiesConst.append(m)
 
-                # HACK: Andersen 4 constraints
-            #     if i == 1:
-            #        bodiesConst.append(bv == 1)
-            #     if i == 2:
-            #        bodiesConst.append(Or(bv == 2, bv == m))
-            #        #bodiesConst.append(m)
-            #
-            #     if i == 3:
-            #        bodiesConst.append(Or(bv == 3, bv == m))
-            #        #bodiesConst.append(m)
-            #
-            #     if i == 4:
-            #        bodiesConst.append(Or(bv == 4, bv == m))
-            #        #bodiesConst.append(m)
-            #
-            # andersen = []
-            # if i > 1:
-            #     disj = []
-            #     for b in bi:
-            #         disj.append(b == i)
-            #
-            #     #print "----->", disj
-            #     bodiesConst.append(Or(*disj))
+                    if i == 3:
+                       bodiesConst.append(Or(bv == 3, bv == m))
+                       #bodiesConst.append(m)
+
+                    if i == 4:
+                       bodiesConst.append(Or(bv == 4, bv == m))
+                       #bodiesConst.append(m)
+
+            if self.andersen:
+                andersen = []
+                if i > 1:
+                    disj = []
+                    for b in bi:
+                        disj.append(b == i)
+
+                    #print "----->", disj
+                    bodiesConst.append(Or(*disj))
 
 
             bodies[i] = bi
@@ -1099,7 +1145,7 @@ class STask:
         # enforce equality -- weaker than chain
 
         for i in range(1, self.nc+1):
-            equality = And(equality, self.getEquality(i))
+            equality = And(equality, self.getConnected(i))#, self.getEquality(i))
 
         base = True
 

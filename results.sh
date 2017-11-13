@@ -17,5 +17,6 @@ $X OP4
 $X SG
 $X AP
 $X RB
+$X INV
 $X And3
 $X And
