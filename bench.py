@@ -134,8 +134,12 @@ elif args.benchmark == "OP3":
 # paths of length divisible by 3
     input = [Fact(rin, 1, 2), Fact(rin, 2, 3), Fact(rin, 3, 4), Fact(rin, 4, 5),Fact(rin,5,6), Fact(rin,6,7)]
 
+    #pe = [Fact(rout, 1, 4), Fact(rout, 1, 7)]
+    #ne = [Fact(rout, 1, 3), Fact(rout, 5, 1), Fact(rout, 2, 4), Fact(rout, 1, 5), Fact(rout, 4, 2), Fact(rout, 3, 1)]
+
     pe = [Fact(rout, 1, 4), Fact(rout, 1, 7)]
     ne = [Fact(rout, 1, 3), Fact(rout, 5, 1), Fact(rout, 2, 4), Fact(rout, 1, 5), Fact(rout, 4, 2), Fact(rout, 3, 1)]
+
 
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=8, base=1, soft=False, chain=False)
@@ -159,7 +163,9 @@ elif args.benchmark == "SG":
     pe = [Fact(rout, 4, 5), Fact(rout, 6, 7), Fact(rout, 2, 3), Fact(rout, 5,6)]
     ne = [Fact(rout, 2, 5), Fact(rout, 2, 4), Fact(rout, 3, 6),
            Fact(rout, 3, 1), Fact(rout, 3, 7), Fact(rout, 1,2), Fact(rout, 2,1)]
-
+    
+    pe = [Fact(rout, 4, 5), Fact(rout,6,7), Fact(rout,2,3), Fact(rout,5,6)]#, Fact(rout,6,7),Fact(rout,2,3),Fact(rout,5,6)]#, Fact(rout, 6, 7), Fact(rout, 2, 3), Fact(rout, 5,6)]
+    #ne = [Fact(rout,4,4)]
     x = EDB([rin], input)
     s = STask(x, [rout], pe, ne, domain=8, base=1, soft=False)
     stats = s.synthesize(nc=2, nl=3, bound=4)
