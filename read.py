@@ -30,7 +30,7 @@ parser.add_argument("-l", "--litnum", required=True,
                         help="Bound on # of literals")
 
 parser.add_argument("-t", "--tlim", required=True,
-                        help="Time limit per test")
+                        help="Time limit per test (s)")
 
 args = parser.parse_args()
 
