@@ -6,6 +6,7 @@ parser = argparse.ArgumentParser(description='Zaatar: The Symbolic Datalog Synth
 parser.add_argument("-b", "--benchmark", required=True,
                         help="Input benchmark bench")
 
+
 parser.add_argument("-l", "--log", required=False, action='store_true',
                         default = False,
                         help="log stats to res.csv")
@@ -392,6 +393,17 @@ if args.benchmark == "INV":
     s = STask(x, [oneout], pe, ne, domain=7, base=1)
     stats = s.synthesize(nc=2, nl=2, bound=4)
 
+if args.benchmark == "CLEVR":
+    for r in [2]:
+        input = [Fact(rin,x,x+1) for x in range(1,r)]
+        pe = [Fact(oneout,r)]
+        ne = [Fact(oneout,x) for x in range(1,r)]
+        x = EDB([rin], input)
+        s = STask(x, [oneout], pe, ne, domain=r+1, base=1)
+        stats = s.synthesize(nc=1, nl=r, bound=1)
+        print ("DONE with: ", r)
+        print (stats)
+
 # Steensgaard3
 # PointsTo(y, x) :- AddressOf(y, x).
 # ptsto(q,x) :- Assign(p,q), ptsto(p,x).
@@ -474,11 +486,11 @@ if args.benchmark == "INV":
 
 
 else:
-    print "No such benchmark available"
+    print ("No such benchmark available")
 # print f
 
 res = ", ".join(map(str,[args.benchmark] + stats))
-print res
+print (res)
 
 if args.log:
     f = open('res.csv', 'a')
