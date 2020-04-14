@@ -29,7 +29,7 @@ parser.add_argument("-f", "--file", required=True,
 parser.add_argument("-l", "--litnum", required=True,
                         help="Bound on # of literals")
 
-parser.add_argument("-i", "--ilim", required=True,
+parser.add_argument("-t", "--tlim", required=True,
                         help="Time limit per test")
 
 args = parser.parse_args()
@@ -156,35 +156,32 @@ for t in x:
     # create all synthesis instances
     nobj = len(t['objects'])
     
+    print ("\nRunning on scene with", nobj, "objects")
     for o in range(1,nobj+1):
         pe = [Fact(rout, o)]
         nes = [Fact(rout,x) for x in range(1,o)]
         nes = nes + [Fact(rout,x) for x in range(o+1,nobj+1)]
-        print (pe)
-        print (nes)
+
 
         edb = EDB(rins,fs)
         s = STask(edb, [rout], pe,nes,domain=nobj+1,base=1)
-        
-        try:
-            try:
-                with time_limit(int(args.ilim)):
-                    for i in range(1,int(args.litnum)+1):
-                        stats = s.synthesize(nc=1, nl=i, bound=1)
-                        if stats != False: break
-            except TimeoutException as e:
-                stats = False
-                print("Timed out!")
-        except:
-            stats = False
-            print ("Timed out2")
+        import time
+        start = time.time()
+        for i in range(1,int(args.litnum)+1):
+            offset = time.time()-start
+            stats = s.synthesize(nc=1, nl=i, bound=1, tlim=int(args.tlim),offset=offset)
+            if stats != False: 
+                print ("# of literals in synth clause: ",i)
+                break
             
+        if stats == False: print ("Timeout")
 
+        end = time.time()
+        print ("wall time: ", end-start)
         
-        print (stats)
         total = total+1
         if stats != False:
             solved = solved + 1
         print (solved, "out of", total)
 
-print (solved, "out of", total)
+print ("\nFINAL",solved, "out of", total)

@@ -923,7 +923,7 @@ class STask:
 
         return And(*c)
 
-    def synthesize(self, nc, nl, bound):
+    def synthesize(self, nc, nl, bound, tlim,offset):
         # number of clauses
         self.nc = nc
 
@@ -1174,7 +1174,13 @@ class STask:
         #const = And(const, self.bodies[2][0] == 1, self.bodies[2][1] == 2)
 
         i = 1
+        import time
+        start = time.time()
+
         while True:
+            end = time.time()
+            if end - start + offset > tlim:
+                return False
 
             (clauses, model) = self.solveConst(const, pos, softC)
             
